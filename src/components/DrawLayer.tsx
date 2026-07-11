@@ -1,4 +1,10 @@
-import { useRef, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { ViewportPortal, useReactFlow } from "@xyflow/react";
 
 export interface Point {
@@ -48,6 +54,24 @@ export function DrawLayer({
   const [cur, setCur] = useState<Point[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const drawing = useRef(false);
+  const editRef = useRef<HTMLDivElement | null>(null);
+
+  // Foca o texto recém-criado (após o commit do DOM e o fim do clique).
+  useEffect(() => {
+    if (!editing) return;
+    const raf = requestAnimationFrame(() => {
+      const el = editRef.current;
+      if (!el) return;
+      el.focus();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [editing]);
   const active = tool === "draw" || tool === "erase" || tool === "text";
 
   const flowPt = (e: React.PointerEvent): Point =>
@@ -140,9 +164,8 @@ export function DrawLayer({
             className="canvas-text nodrag nowheel"
             contentEditable
             suppressContentEditableWarning
-            ref={(el) => {
-              if (el && editing === t.id) el.focus();
-            }}
+            ref={editing === t.id ? editRef : undefined}
+            onClick={() => setEditing(t.id)}
             style={{
               position: "absolute",
               left: t.x,

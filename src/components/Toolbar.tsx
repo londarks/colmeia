@@ -51,6 +51,7 @@ export function Toolbar({
   setShowOmbro,
 }: Props) {
   const [agentsOpen, setAgentsOpen] = useState(false);
+  const [drawOpen, setDrawOpen] = useState(false);
 
   return (
     <div className="toolbar">
@@ -108,37 +109,64 @@ export function Toolbar({
 
       <div className="tool-divider" />
 
-      <button
-        className={`tool-item ${tool === "draw" ? "on" : ""}`}
-        title="Desenhar"
-        onClick={() => setTool("draw")}
-      >
-        <Pencil size={17} strokeWidth={1.9} />
-      </button>
-      <button
-        className={`tool-item ${tool === "erase" ? "on" : ""}`}
-        title="Borracha"
-        onClick={() => setTool("erase")}
-      >
-        <Eraser size={17} strokeWidth={1.9} />
-      </button>
-      <div className="tool-swatches">
-        {COLORS.map((c) => (
-          <button
-            key={c}
-            className={`tool-swatch ${c === color ? "on" : ""}`}
-            style={{ background: c }}
-            title="Cor"
-            onClick={() => {
-              setColor(c);
-              if (tool !== "draw" && tool !== "text") setTool("draw");
-            }}
-          />
-        ))}
+      <div className="tool-menu">
+        <button
+          className={`tool-item ${tool === "draw" || tool === "erase" ? "on" : ""}`}
+          title="Desenho"
+          onClick={() => setDrawOpen((v) => !v)}
+        >
+          <Pencil size={17} strokeWidth={1.9} />
+        </button>
+        {drawOpen && (
+          <>
+            <div className="tool-backdrop" onClick={() => setDrawOpen(false)} />
+            <div className="tool-dropdown">
+              <button
+                className={`dropdown-item ${tool === "draw" ? "on" : ""}`}
+                onClick={() => {
+                  setTool("draw");
+                  setDrawOpen(false);
+                }}
+              >
+                <Pencil size={15} strokeWidth={1.8} /> Desenhar
+              </button>
+              <button
+                className={`dropdown-item ${tool === "erase" ? "on" : ""}`}
+                onClick={() => {
+                  setTool("erase");
+                  setDrawOpen(false);
+                }}
+              >
+                <Eraser size={15} strokeWidth={1.8} /> Borracha
+              </button>
+              <div className="dropdown-swatches">
+                {COLORS.map((c) => (
+                  <button
+                    key={c}
+                    className={`tool-swatch ${c === color ? "on" : ""}`}
+                    style={{ background: c }}
+                    title="Cor"
+                    onClick={() => {
+                      setColor(c);
+                      setTool("draw");
+                      setDrawOpen(false);
+                    }}
+                  />
+                ))}
+              </div>
+              <button
+                className="dropdown-item danger"
+                onClick={() => {
+                  onClear();
+                  setDrawOpen(false);
+                }}
+              >
+                <Trash2 size={15} strokeWidth={1.8} /> Limpar desenho
+              </button>
+            </div>
+          </>
+        )}
       </div>
-      <button className="tool-item" title="Limpar desenho" onClick={onClear}>
-        <Trash2 size={16} strokeWidth={1.9} />
-      </button>
 
       <div className="tool-divider" />
 

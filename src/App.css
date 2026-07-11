@@ -648,6 +648,19 @@
   background: var(--bg-hover);
   color: var(--text-primary);
 }
+.dropdown-item.on {
+  color: var(--accent);
+}
+.dropdown-item.danger:hover {
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 15%, transparent);
+}
+.dropdown-swatches {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+}
 
 /* Texto escrito direto no canvas */
 .canvas-text {
