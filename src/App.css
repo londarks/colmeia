@@ -889,6 +889,16 @@
   cursor: not-allowed;
 }
 
+/* ---- Ombro ---- */
+.ombro-result {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  padding: 4px 4px 8px;
+}
+
 /* ========================= Painel de aprovações ========================= */
 .approvals {
   position: absolute;

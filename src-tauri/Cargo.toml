@@ -28,3 +28,4 @@ base64 = "0.22"
 tiny_http = "0.12"
 rand = "0.8"
 urlencoding = "2"
+ureq = { version = "2", features = ["json"] }

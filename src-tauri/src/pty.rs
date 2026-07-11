@@ -266,6 +266,31 @@ impl Shared {
         Some(String::from_utf8_lossy(&bytes).to_string())
     }
 
+    /// Junta a saída recente de todos os terminais (sem ANSI), para o Ombro analisar.
+    pub fn agents_context(&self, max_per: usize) -> String {
+        let nodes = self.nodes.lock().unwrap();
+        let sessions = self.sessions.lock().unwrap();
+        let mut parts = Vec::new();
+        for n in nodes.iter().filter(|n| n.kind == "terminal") {
+            if let Some(sess) = sessions.get(&n.id) {
+                let bytes = sess.buffer.lock().unwrap();
+                let clean = strip_ansi(&String::from_utf8_lossy(&bytes));
+                let tail: String = {
+                    let chars: Vec<char> = clean.chars().collect();
+                    let start = chars.len().saturating_sub(max_per);
+                    chars[start..].iter().collect()
+                };
+                let role = if n.role.is_empty() {
+                    String::new()
+                } else {
+                    format!(" [{}]", n.role)
+                };
+                parts.push(format!("## {}{}\n{}", n.title, role, tail.trim()));
+            }
+        }
+        parts.join("\n\n")
+    }
+
     /// Escreve dados na entrada de uma sessão (usado pelo `colmeia ask`).
     pub fn write_to(&self, id: &str, data: &str) -> bool {
         let mut sessions = self.sessions.lock().unwrap();
@@ -378,6 +403,31 @@ impl PtyState {
     pub fn shared(&self) -> Arc<Shared> {
         self.0.clone()
     }
+}
+
+/// Remove sequências de escape ANSI (cores, cursor) de uma string.
+fn strip_ansi(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut chars = s.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '\u{1b}' {
+            // Pula a sequência de escape até uma letra final (CSI) ou o próximo char.
+            if chars.peek() == Some(&'[') {
+                chars.next();
+                while let Some(&n) = chars.peek() {
+                    chars.next();
+                    if n.is_ascii_alphabetic() {
+                        break;
+                    }
+                }
+            } else {
+                chars.next();
+            }
+        } else if c != '\r' {
+            out.push(c);
+        }
+    }
+    out
 }
 
 /// Diretório onde geramos os scripts da CLI `colmeia`.

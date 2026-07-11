@@ -123,6 +123,11 @@ export function workspaceLoad(): Promise<WorkspaceData | null> {
   return invoke("workspace_load");
 }
 
+/** Pede ao Ombro (Ollama local) uma análise dos agentes + próximo passo. */
+export function ombroAnalyze(model?: string): Promise<string> {
+  return invoke("ombro_analyze", { model: model || null });
+}
+
 /** Decodifica um chunk base64 vindo do PTY em bytes crus para o xterm. */
 export function b64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);

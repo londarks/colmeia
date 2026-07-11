@@ -1,4 +1,5 @@
 mod floors;
+mod ombro;
 mod orchestrator;
 mod pty;
 mod workspace;
@@ -35,6 +36,7 @@ pub fn run() {
             floors::floor_list,
             floors::floor_create,
             floors::floor_remove,
+            ombro::ombro_analyze,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -14,7 +14,7 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import { listen } from "@tauri-apps/api/event";
-import { StickyNote, Timer, Layers } from "lucide-react";
+import { StickyNote, Timer, Layers, Eye } from "lucide-react";
 import logoUrl from "./assets/logo.png";
 import { TerminalNode } from "./nodes/TerminalNode";
 import { NoteNode } from "./nodes/NoteNode";
@@ -22,6 +22,7 @@ import { DeletableEdge } from "./components/DeletableEdge";
 import { RoutinesPanel } from "./components/RoutinesPanel";
 import { ApprovalsPanel } from "./components/ApprovalsPanel";
 import { FloorsPanel } from "./components/FloorsPanel";
+import { OmbroPanel } from "./components/OmbroPanel";
 import { TitleBar } from "./components/TitleBar";
 import { AGENTS, AGENT_LIST, type AgentId } from "./lib/agents";
 import { ROLES, ROLE_MAP, type Role } from "./lib/roles";
@@ -42,6 +43,7 @@ export default function App() {
   const [theme, setTheme] = useState<string>(getStoredTheme());
   const [showRoutines, setShowRoutines] = useState(false);
   const [showFloors, setShowFloors] = useState(false);
+  const [showOmbro, setShowOmbro] = useState(false);
   const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
   const nodeTypes = useMemo<NodeTypes>(
     () => ({ terminal: TerminalNode, note: NoteNode }),
@@ -451,6 +453,15 @@ export default function App() {
             <Layers className="side-icon" size={16} strokeWidth={1.75} />
             <span className="side-btn-label">Floors</span>
           </button>
+          <button
+            className={`side-btn tool ${showOmbro ? "is-active" : ""}`}
+            style={{ ["--c" as string]: "var(--accent)" } as React.CSSProperties}
+            onClick={() => setShowOmbro((v) => !v)}
+            title="Ombro (supervisor local via Ollama)"
+          >
+            <Eye className="side-icon" size={16} strokeWidth={1.75} />
+            <span className="side-btn-label">Ombro</span>
+          </button>
         </div>
 
         <div className="side-spacer" />
@@ -523,6 +534,8 @@ export default function App() {
             onClose={() => setShowFloors(false)}
           />
         )}
+
+        {showOmbro && <OmbroPanel onClose={() => setShowOmbro(false)} />}
 
         <ApprovalsPanel
           approvals={approvals}
