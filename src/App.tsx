@@ -119,7 +119,13 @@ export default function App() {
   // Espelha o grafo no backend sempre que nós/arestas mudam (escopo do roteamento).
   useEffect(() => {
     const graphNodes = nodes.map((n) => {
-      const d = n.data as { title?: string; role?: string; content?: string };
+      const d = n.data as {
+        title?: string;
+        role?: string;
+        content?: string;
+        cwd?: string;
+        autoApproveInCwd?: boolean;
+      };
       return {
         id: n.id,
         type: n.type ?? "terminal",
@@ -127,6 +133,8 @@ export default function App() {
         role: d.role ? (ROLE_MAP[d.role]?.label ?? "") : "",
         roleBriefing: d.role ? (ROLE_MAP[d.role]?.briefing ?? "") : "",
         content: d.content ?? "",
+        cwd: d.cwd ?? "",
+        autoApproveInCwd: !!d.autoApproveInCwd,
       };
     });
     const graphEdges = edges.map((e) => ({ source: e.source, target: e.target }));

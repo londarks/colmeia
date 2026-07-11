@@ -57,6 +57,8 @@ export interface GraphNode {
   role?: string;
   roleBriefing?: string;
   content?: string;
+  cwd?: string;
+  autoApproveInCwd?: boolean;
 }
 export interface GraphEdge {
   source: string;
@@ -97,9 +99,16 @@ export interface ApprovalRequest {
   summary: string;
 }
 
-/** Responde a uma aprovação pendente (true = permitir, false = recusar). */
-export function approvalResolve(id: string, allow: boolean): Promise<void> {
-  return invoke("approval_resolve", { id, allow });
+/** Responde a uma aprovação pendente. `always` cria uma regra de auto-aprovação
+ *  para (node, tool) pelo resto da sessão. */
+export function approvalResolve(
+  id: string,
+  allow: boolean,
+  always: boolean,
+  node: string,
+  tool: string,
+): Promise<void> {
+  return invoke("approval_resolve", { id, allow, always, node, tool });
 }
 
 export interface WorkspaceData {

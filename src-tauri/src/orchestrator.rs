@@ -360,6 +360,18 @@ fn route(
                 tool: String::new(),
                 summary: String::new(),
             });
+            // Regra de auto-aprovação (por ferramenta) OU escrita dentro da pasta do agente?
+            if shared.is_auto_allowed(source, &b.tool)
+                || shared.should_auto_approve_write(source, &b.tool, &b.summary)
+            {
+                return (
+                    200,
+                    serde_json::json!({"hookSpecificOutput":{
+                        "hookEventName":"PreToolUse","permissionDecision":"allow"
+                    }})
+                    .to_string(),
+                );
+            }
             let approval_id: String = format!(
                 "apv-{}",
                 rand::thread_rng()

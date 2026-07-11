@@ -1,4 +1,4 @@
-import { Check, X, ShieldAlert } from "lucide-react";
+import { Check, X, ShieldAlert, CheckCheck } from "lucide-react";
 import { approvalResolve, type ApprovalRequest } from "../lib/pty";
 
 interface Props {
@@ -9,9 +9,9 @@ interface Props {
 export function ApprovalsPanel({ approvals, onResolved }: Props) {
   if (approvals.length === 0) return null;
 
-  const decide = (id: string, allow: boolean) => {
-    approvalResolve(id, allow).catch(() => {});
-    onResolved(id);
+  const decide = (a: ApprovalRequest, allow: boolean, always: boolean) => {
+    approvalResolve(a.id, allow, always, a.node, a.tool).catch(() => {});
+    onResolved(a.id);
   };
 
   return (
@@ -34,15 +34,22 @@ export function ApprovalsPanel({ approvals, onResolved }: Props) {
             <div className="approval-actions">
               <button
                 className="approve-btn deny"
-                onClick={() => decide(a.id, false)}
+                onClick={() => decide(a, false, false)}
               >
                 <X size={14} strokeWidth={2.2} /> Recusar
               </button>
               <button
                 className="approve-btn allow"
-                onClick={() => decide(a.id, true)}
+                onClick={() => decide(a, true, false)}
               >
                 <Check size={14} strokeWidth={2.2} /> Aprovar
+              </button>
+              <button
+                className="approve-btn always"
+                title={`Auto-aprovar "${a.tool}" de "${a.title}" nesta sessão`}
+                onClick={() => decide(a, true, true)}
+              >
+                <CheckCheck size={14} strokeWidth={2.2} /> Sempre
               </button>
             </div>
           </div>

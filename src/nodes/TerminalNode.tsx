@@ -9,7 +9,7 @@ import {
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
-import { X, Folder } from "lucide-react";
+import { X, Folder, ShieldCheck } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { AGENTS, type AgentId } from "../lib/agents";
 import { ROLES, ROLE_MAP } from "../lib/roles";
@@ -29,6 +29,7 @@ export interface TerminalNodeData {
   role?: string;
   waiting?: boolean;
   cwd?: string;
+  autoApproveInCwd?: boolean;
 }
 
 function TerminalNodeInner({ id, data, selected }: NodeProps) {
@@ -211,6 +212,23 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
           <Folder size={12} strokeWidth={2} />
           {cwdName && <span className="cwd-name">{cwdName}</span>}
         </button>
+        {d.cwd && (
+          <button
+            className={`autoapprove-btn nodrag ${d.autoApproveInCwd ? "on" : ""}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              updateNodeData(id, { autoApproveInCwd: !d.autoApproveInCwd });
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            title={
+              d.autoApproveInCwd
+                ? "Auto-aprovando escritas na pasta — clique para desligar"
+                : "Auto-aprovar escritas dentro da pasta (Write/Edit)"
+            }
+          >
+            <ShieldCheck size={12} strokeWidth={2} />
+          </button>
+        )}
         <select
           className="role-select nodrag"
           value={d.role ?? ""}

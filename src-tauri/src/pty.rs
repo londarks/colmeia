@@ -3,7 +3,7 @@
 // Guarda também o grafo (nós + arestas) e um buffer rolante por sessão, usados
 // pelo servidor loopback (orchestrator.rs) para a comunicação entre agentes.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -45,6 +45,10 @@ pub struct NodeInfo {
     pub role_briefing: String,
     #[serde(default)]
     pub content: String,
+    #[serde(default)]
+    pub cwd: String,
+    #[serde(default, rename = "autoApproveInCwd")]
+    pub auto_approve_in_cwd: bool,
 }
 
 /// Info de uma aresta (conexão) do canvas.
@@ -88,6 +92,8 @@ pub struct Shared {
     routines: Mutex<HashMap<String, RoutineHandle>>,
     /// Aprovações pendentes: id -> canal para entregar a decisão (true=permitir).
     pending_approvals: Mutex<HashMap<String, Sender<bool>>>,
+    /// Regras de auto-aprovação da sessão: chave "node\u{1f}tool" -> permitir sem perguntar.
+    auto_allow: Mutex<HashSet<String>>,
     /// Token exigido em toda chamada ao servidor loopback.
     pub token: String,
     /// Porta do servidor loopback (definida no start).
@@ -107,9 +113,28 @@ impl Shared {
             edges: Mutex::new(Vec::new()),
             routines: Mutex::new(HashMap::new()),
             pending_approvals: Mutex::new(HashMap::new()),
+            auto_allow: Mutex::new(HashSet::new()),
             token,
             port: Mutex::new(0),
         }
+    }
+
+    fn auto_key(node: &str, tool: &str) -> String {
+        format!("{node}\u{1f}{tool}")
+    }
+    /// Já existe regra de auto-aprovação para (node, tool)?
+    pub fn is_auto_allowed(&self, node: &str, tool: &str) -> bool {
+        self.auto_allow
+            .lock()
+            .unwrap()
+            .contains(&Self::auto_key(node, tool))
+    }
+    /// Adiciona uma regra de auto-aprovação para a sessão.
+    pub fn add_auto_allow(&self, node: &str, tool: &str) {
+        self.auto_allow
+            .lock()
+            .unwrap()
+            .insert(Self::auto_key(node, tool));
     }
 
     /// Registra uma aprovação pendente (o `/approve` bloqueia até a decisão).
@@ -120,6 +145,26 @@ impl Shared {
     /// Retira o canal de uma aprovação (idempotente).
     pub fn take_pending(&self, id: &str) -> Option<Sender<bool>> {
         self.pending_approvals.lock().unwrap().remove(id)
+    }
+
+    /// Auto-aprova escritas (Write/Edit/...) dentro da pasta do agente, se ligado no nó.
+    pub fn should_auto_approve_write(&self, node_id: &str, tool: &str, path: &str) -> bool {
+        const WRITE_TOOLS: [&str; 4] = ["Write", "Edit", "MultiEdit", "NotebookEdit"];
+        if !WRITE_TOOLS.contains(&tool) || path.is_empty() {
+            return false;
+        }
+        let norm = |s: &str| s.replace('\\', "/").to_lowercase();
+        self.nodes
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|n| n.id == node_id)
+            .map(|n| {
+                n.auto_approve_in_cwd
+                    && !n.cwd.is_empty()
+                    && norm(path).starts_with(&norm(&n.cwd))
+            })
+            .unwrap_or(false)
     }
 
     /// Título de um nó pelo id (para exibir no painel de aprovações).
@@ -611,9 +656,20 @@ pub fn routine_delete(state: State<'_, PtyState>, id: String) -> Vec<RoutineInfo
     state.0.list_routines()
 }
 
-/// Responde a uma aprovação pendente (true = permitir, false = recusar).
+/// Responde a uma aprovação pendente. Se `always` (e permitindo), registra uma
+/// regra de auto-aprovação para (node, tool) pelo resto da sessão.
 #[tauri::command]
-pub fn approval_resolve(state: State<'_, PtyState>, id: String, allow: bool) {
+pub fn approval_resolve(
+    state: State<'_, PtyState>,
+    id: String,
+    allow: bool,
+    always: bool,
+    node: String,
+    tool: String,
+) {
+    if always && allow && !node.is_empty() && !tool.is_empty() {
+        state.0.add_auto_allow(&node, &tool);
+    }
     if let Some(tx) = state.0.take_pending(&id) {
         let _ = tx.send(allow);
     }

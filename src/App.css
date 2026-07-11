@@ -471,6 +471,27 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.autoapprove-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  color: var(--text-muted);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.autoapprove-btn:hover {
+  color: var(--text-primary);
+}
+.autoapprove-btn.on {
+  color: var(--success);
+  border-color: var(--success);
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+}
 
 /* Badge/seletor de papel (Master, Engenheiro, ...) */
 .role-select {
@@ -917,4 +938,15 @@
 }
 .approve-btn.deny:hover {
   background: color-mix(in srgb, var(--error) 30%, transparent);
+}
+.approve-btn.always {
+  background: color-mix(in srgb, var(--accent-blue) 16%, transparent);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+.approve-btn.always:hover {
+  background: color-mix(in srgb, var(--accent-blue) 30%, transparent);
+}
+.approval-actions {
+  flex-wrap: wrap;
 }
