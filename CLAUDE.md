@@ -94,10 +94,12 @@ o servidor loopback roda no `setup()` para ter o `AppHandle`. O canvas é persis
 
 ## Commits e Pull Requests
 
+- **Escreva os commits em INGLÊS**, com mensagens **profissionais**, no imperativo e concisas
+  (ex.: `add agent routing over PTY edges`, `fix approval hook not loading via --settings`).
+  Um resumo curto na primeira linha; se precisar, detalhe em bullets no corpo.
 - **NÃO se auto-cite.** Mensagens de commit e descrições de PR **não devem** conter linhas como
   `Co-Authored-By: Claude`, `Generated with Claude Code`, nem qualquer menção a Claude/Anthropic
   ou à ferramenta usada. Escreva a mensagem como se fosse do próprio autor humano.
-- Commits em imperativo, curtos e descritivos (ex.: "adiciona roteamento entre agentes").
 - Não commitar nem dar push sem o usuário pedir. Nunca use `--no-verify`.
 
 ## Roadmap (próximos passos)

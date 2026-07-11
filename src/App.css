@@ -320,7 +320,33 @@
   animation: edgePulse 0.8s ease-in-out infinite;
 }
 
-/* Botão ✕ para remover uma conexão (aparece ao selecionar/hover da aresta) */
+/* Barrinha da aresta (tipo + remover), visível ao selecionar a conexão. */
+.edge-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.edge-kind {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+.edge-kind:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
 .edge-del {
   display: flex;
   align-items: center;
@@ -328,22 +354,16 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--bg-sidebar);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: none;
   color: var(--text-muted);
   font-size: 11px;
   line-height: 1;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
-}
-.edge-del.is-visible,
-.edge-del:hover {
-  opacity: 1;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 .edge-del:hover {
   background: color-mix(in srgb, var(--error) 28%, var(--bg-sidebar));
-  border-color: var(--error);
   color: var(--error);
 }
 
