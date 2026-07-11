@@ -1,0 +1,154 @@
+/* ==========================================================================
+   Sistema de temas — portado do projeto "markdown" do usuário.
+   Tokens de cor por tema via [data-theme]; o padrão (Midnight) fica no :root.
+   ========================================================================== */
+
+:where(:root),
+[data-theme="midnight"] {
+  --bg-sidebar: #08090c;
+  --bg-note-list: #0c0e13;
+  --bg-editor: #10131a;
+  --bg-hover: #1a1e28;
+  --bg-selected: #252a38;
+  --bg-input: #161922;
+  --bg-tooltip: #06070a;
+  --text-primary: #e6e9ef;
+  --text-secondary: #a8b0c0;
+  --text-muted: #6b7488;
+  --text-faint: #3d4458;
+  --accent: #23d18b;
+  --accent-hover: #3fe8a0;
+  --accent-muted: rgba(35, 209, 139, 0.15);
+  --accent-blue: #5ec8ff;
+  --border: #1d212c;
+  --border-subtle: #161922;
+  --scrollbar: #252a38;
+  --scrollbar-hover: #3d4458;
+  --selection: rgba(35, 209, 139, 0.22);
+  --success: #23d18b;
+  --warning: #ffaf5c;
+  --error: #ff5e5e;
+  --info: #5ec8ff;
+}
+
+[data-theme="tokyo-night"] {
+  --bg-sidebar: #16161e;
+  --bg-note-list: #1a1b26;
+  --bg-editor: #1f2030;
+  --bg-hover: #343a52;
+  --bg-selected: #414868;
+  --bg-input: #24283b;
+  --bg-tooltip: #16161e;
+  --text-primary: #c0caf5;
+  --text-secondary: #a9b1d6;
+  --text-muted: #565f89;
+  --text-faint: #414868;
+  --accent: #7aa2f7;
+  --accent-hover: #89b4fa;
+  --accent-muted: rgba(122, 162, 247, 0.15);
+  --accent-blue: #7dcfff;
+  --border: #343a52;
+  --border-subtle: #292e42;
+  --scrollbar: #414868;
+  --scrollbar-hover: #565f89;
+  --selection: rgba(122, 162, 247, 0.3);
+  --success: #9ece6a;
+  --warning: #e0af68;
+  --error: #f7768e;
+  --info: #7aa2f7;
+}
+
+[data-theme="dracula"] {
+  --bg-sidebar: #21222c;
+  --bg-note-list: #282a36;
+  --bg-editor: #2d2f3d;
+  --bg-hover: #44475a;
+  --bg-selected: #6272a4;
+  --bg-input: #343746;
+  --bg-tooltip: #21222c;
+  --text-primary: #f8f8f2;
+  --text-secondary: #bfbfbf;
+  --text-muted: #6272a4;
+  --text-faint: #44475a;
+  --accent: #bd93f9;
+  --accent-hover: #caa9fa;
+  --accent-muted: rgba(189, 147, 249, 0.15);
+  --accent-blue: #8be9fd;
+  --border: #44475a;
+  --border-subtle: #343746;
+  --scrollbar: #44475a;
+  --scrollbar-hover: #6272a4;
+  --selection: rgba(189, 147, 249, 0.3);
+  --success: #50fa7b;
+  --warning: #f1fa8c;
+  --error: #ff5555;
+  --info: #8be9fd;
+}
+
+[data-theme="rose-pine"] {
+  --bg-sidebar: #191724;
+  --bg-note-list: #1f1d2e;
+  --bg-editor: #26233a;
+  --bg-hover: #403d52;
+  --bg-selected: #524f67;
+  --bg-input: #26233a;
+  --bg-tooltip: #191724;
+  --text-primary: #e0def4;
+  --text-secondary: #908caa;
+  --text-muted: #6e6a86;
+  --text-faint: #524f67;
+  --accent: #c4a7e7;
+  --accent-hover: #ebbcba;
+  --accent-muted: rgba(196, 167, 231, 0.15);
+  --accent-blue: #9ccfd8;
+  --border: #403d52;
+  --border-subtle: #26233a;
+  --scrollbar: #403d52;
+  --scrollbar-hover: #524f67;
+  --selection: rgba(196, 167, 231, 0.3);
+  --success: #9ccfd8;
+  --warning: #f6c177;
+  --error: #eb6f92;
+  --info: #c4a7e7;
+}
+
+/* ---------- Base ---------- */
+:root {
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar);
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-hover);
+}
+
+::selection {
+  background-color: var(--selection);
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  background: var(--bg-note-list);
+  color: var(--text-primary);
+  overflow: hidden;
+}

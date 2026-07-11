@@ -1,0 +1,338 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+/* ============================ Barra superior ============================ */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+.brand-mark {
+  font-size: 18px;
+}
+.brand b {
+  letter-spacing: 0.2px;
+}
+.brand .tag {
+  color: var(--text-muted);
+  font-size: 12px;
+  padding-left: 8px;
+  margin-left: 2px;
+  border-left: 1px solid var(--border);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 2px;
+  background: var(--border);
+}
+
+.add-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.add-btn {
+  --c: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--c) 14%, var(--bg-input));
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.add-btn:hover {
+  background: color-mix(in srgb, var(--c) 26%, var(--bg-input));
+  border-color: color-mix(in srgb, var(--c) 70%, transparent);
+}
+.add-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+.add-emoji {
+  font-size: 13px;
+}
+
+/* Seletor de tema */
+.theme-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.theme-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-muted);
+}
+.theme-picker select {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  padding-right: 4px;
+}
+.theme-picker select option {
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+/* ============================== Canvas ============================== */
+.canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.react-flow {
+  background: var(--bg-note-list);
+}
+
+/* Estado vazio */
+.empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: var(--text-muted);
+  pointer-events: none;
+  max-width: 440px;
+}
+.empty-badge {
+  font-size: 40px;
+  opacity: 0.5;
+  margin-bottom: 8px;
+}
+.empty h2 {
+  margin: 0 0 8px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.empty b {
+  color: var(--text-primary);
+}
+
+/* ===================== Controles do React Flow ===================== */
+/* Corrige o "retângulo branco": os Controls vêm claros por padrão. */
+.react-flow__controls {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.react-flow__controls-button {
+  background: var(--bg-input);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  width: 28px;
+  height: 28px;
+}
+.react-flow__controls-button:hover {
+  background: var(--bg-hover);
+}
+.react-flow__controls-button svg {
+  fill: var(--text-secondary);
+}
+
+/* Corrige a "preview feia": o MiniMap com fundo/máscara claros. */
+.react-flow__minimap {
+  background: var(--bg-sidebar) !important;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.react-flow__attribution {
+  display: none;
+}
+
+/* Arestas selecionadas */
+.react-flow__edge-path {
+  stroke: var(--accent);
+}
+
+/* ========================= Nó de terminal ========================= */
+.term-node {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-editor);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.term-node.is-selected {
+  border-color: var(--agent);
+  box-shadow: 0 0 0 1px var(--agent), 0 14px 40px rgba(0, 0, 0, 0.55);
+}
+
+.node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--agent) 16%, var(--bg-sidebar));
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: grab;
+  user-select: none;
+}
+.node-header:active {
+  cursor: grabbing;
+}
+.node-header .grip {
+  color: var(--text-faint);
+  font-size: 11px;
+  letter-spacing: -2px;
+  line-height: 1;
+}
+.node-header .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--agent);
+  flex: none;
+  box-shadow: 0 0 8px var(--agent);
+}
+.node-header .node-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+.node-header .node-id {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: "Cascadia Code", monospace;
+}
+
+.term-body {
+  flex: 1;
+  min-height: 0;
+  padding: 6px 4px 4px 8px;
+  overflow: hidden;
+  background: var(--bg-editor);
+}
+.term-body .xterm {
+  height: 100%;
+}
+
+/* Handles de conexão (bolinhas nas laterais) */
+.term-handle {
+  width: 12px !important;
+  height: 12px !important;
+  background: var(--bg-editor) !important;
+  border: 2px solid var(--agent) !important;
+  transition: transform 0.1s ease;
+}
+.term-handle:hover {
+  transform: scale(1.25);
+}
+
+/* Alças de redimensionar — visíveis e fáceis de pegar quando o nó é selecionado */
+.term-resize-handle {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 3px !important;
+  background: var(--agent) !important;
+  border: 2px solid var(--bg-editor) !important;
+}
+.term-resize-line {
+  border-color: color-mix(in srgb, var(--agent) 60%, transparent) !important;
+}
+
+/* ============================ Nó de nota ============================ */
+.note-node {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: color-mix(in srgb, var(--agent) 12%, var(--bg-editor));
+  border: 1px solid color-mix(in srgb, var(--agent) 45%, var(--border));
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.note-node.is-selected {
+  border-color: var(--agent);
+  box-shadow: 0 0 0 1px var(--agent), 0 14px 40px rgba(0, 0, 0, 0.55);
+}
+.note-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  background: color-mix(in srgb, var(--agent) 20%, var(--bg-sidebar));
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: grab;
+}
+.note-header:active {
+  cursor: grabbing;
+}
+.note-title {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+}
+.note-body {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  font-family: inherit;
+}
