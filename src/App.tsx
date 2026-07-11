@@ -14,7 +14,15 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import { listen } from "@tauri-apps/api/event";
-import { StickyNote, Timer, Layers, Eye, Globe } from "lucide-react";
+import {
+  StickyNote,
+  Timer,
+  Layers,
+  Eye,
+  Globe,
+  PanelLeftClose,
+  PanelLeft,
+} from "lucide-react";
 import logoUrl from "./assets/logo.png";
 import { TerminalNode } from "./nodes/TerminalNode";
 import { NoteNode } from "./nodes/NoteNode";
@@ -48,6 +56,7 @@ export default function App() {
   const [showFloors, setShowFloors] = useState(false);
   const [showOmbro, setShowOmbro] = useState(false);
   const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [tool, setTool] = useState<DrawTool>("select");
   const [drawColor, setDrawColor] = useState("#e6e9ef");
   const [strokes, setStrokes] = useState<Stroke[]>([]);
@@ -524,7 +533,17 @@ export default function App() {
     <div className="app">
       <TitleBar />
       <div className="workspace">
+        {sidebarOpen && (
         <aside className="sidebar">
+          <div className="side-topbar">
+            <button
+              className="side-collapse"
+              onClick={() => setSidebarOpen(false)}
+              title="Esconder menu"
+            >
+              <PanelLeftClose size={16} strokeWidth={1.9} />
+            </button>
+          </div>
           <div className="side-section">
             <div className="side-label">Adicionar</div>
           <div className="side-actions">
@@ -611,8 +630,18 @@ export default function App() {
           </label>
         </div>
       </aside>
+        )}
 
       <main className="canvas">
+        {!sidebarOpen && (
+          <button
+            className="sidebar-reopen"
+            onClick={() => setSidebarOpen(true)}
+            title="Mostrar menu"
+          >
+            <PanelLeft size={16} strokeWidth={1.9} />
+          </button>
+        )}
         <ReactFlow
           nodes={nodes}
           edges={edges}

@@ -185,6 +185,40 @@
   flex: 1;
 }
 
+.side-topbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: -6px -4px -6px 0;
+}
+.side-collapse,
+.sidebar-reopen {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.side-collapse:hover,
+.sidebar-reopen:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.sidebar-reopen {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 20;
+  background: var(--bg-sidebar);
+  border-color: var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
 /* Seletor de tema */
 .theme-picker {
   display: flex;
