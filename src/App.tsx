@@ -20,6 +20,7 @@ import { TerminalNode } from "./nodes/TerminalNode";
 import { NoteNode } from "./nodes/NoteNode";
 import { DeletableEdge } from "./components/DeletableEdge";
 import { RoutinesPanel } from "./components/RoutinesPanel";
+import { TitleBar } from "./components/TitleBar";
 import { AGENTS, AGENT_LIST, type AgentId } from "./lib/agents";
 import { THEMES, getStoredTheme, applyTheme } from "./lib/theme";
 import { setGraph, workspaceSave, workspaceLoad } from "./lib/pty";
@@ -256,17 +257,11 @@ export default function App() {
 
   return (
     <div className="app">
-      <aside className="sidebar">
-        <div className="brand">
-          <img src={logoUrl} className="brand-logo" alt="colmeia" />
-          <div className="brand-text">
-            <b>colmeia</b>
-            <span className="tag">orquestrador</span>
-          </div>
-        </div>
-
-        <div className="side-section">
-          <div className="side-label">Adicionar</div>
+      <TitleBar />
+      <div className="workspace">
+        <aside className="sidebar">
+          <div className="side-section">
+            <div className="side-label">Adicionar</div>
           <div className="side-actions">
             {AGENT_LIST.map((a) => (
               <button
@@ -379,7 +374,8 @@ export default function App() {
             </p>
           </div>
         )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

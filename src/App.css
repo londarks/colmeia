@@ -1,8 +1,69 @@
 .app {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   height: 100%;
   width: 100%;
+}
+.workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+/* ============================ Barra de título ============================ */
+.titlebar {
+  display: flex;
+  align-items: stretch;
+  height: 34px;
+  flex: none;
+  background: var(--bg-tooltip);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+  z-index: 30;
+}
+.titlebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+}
+.titlebar-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.titlebar-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: var(--text-secondary);
+}
+.titlebar-drag {
+  flex: 1;
+}
+.window-controls {
+  display: flex;
+  align-items: stretch;
+}
+.win-btn {
+  width: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.win-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.win-close:hover {
+  background: #e81123;
+  color: #fff;
 }
 
 /* ============================ Sidebar esquerda ============================ */
