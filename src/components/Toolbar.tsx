@@ -54,143 +54,132 @@ export function Toolbar({
   const [drawOpen, setDrawOpen] = useState(false);
 
   return (
-    <div className="toolbar">
-      <button
-        className={`tool-item ${tool === "select" ? "on" : ""}`}
-        title="Selecionar / mover"
-        onClick={() => setTool("select")}
-      >
-        <MousePointer2 size={17} strokeWidth={1.9} />
-      </button>
-
-      <div className="tool-menu">
+    <div className="toolbar-wrap">
+      <div className="toolbar">
         <button
-          className={`tool-item ${agentsOpen ? "on" : ""}`}
-          title="Adicionar agente"
-          onClick={() => setAgentsOpen((v) => !v)}
+          className={`tool-item ${tool === "select" ? "on" : ""}`}
+          title="Selecionar / mover"
+          onClick={() => setTool("select")}
         >
-          <Terminal size={17} strokeWidth={1.9} />
+          <MousePointer2 size={17} strokeWidth={1.9} />
         </button>
-        {agentsOpen && (
-          <>
-            <div className="tool-backdrop" onClick={() => setAgentsOpen(false)} />
-            <div className="tool-dropdown">
-              {AGENT_LIST.map((a) => (
-                <button
-                  key={a.id}
-                  className="dropdown-item"
-                  onClick={() => {
-                    onAddAgent(a.id);
-                    setAgentsOpen(false);
-                  }}
-                >
-                  <a.icon size={15} strokeWidth={1.8} style={{ color: a.color }} />
-                  {a.label}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
 
-      <button className="tool-item" title="Adicionar nota" onClick={onAddNote}>
-        <StickyNote size={17} strokeWidth={1.9} />
-      </button>
-      <button
-        className={`tool-item ${tool === "text" ? "on" : ""}`}
-        title="Texto no canvas"
-        onClick={() => setTool("text")}
-      >
-        <Type size={17} strokeWidth={1.9} />
-      </button>
-      <button className="tool-item" title="Adicionar navegador" onClick={onAddBrowser}>
-        <Globe size={17} strokeWidth={1.9} />
-      </button>
+        <div className="tool-menu">
+          <button
+            className={`tool-item ${agentsOpen ? "on" : ""}`}
+            title="Adicionar agente"
+            onClick={() => setAgentsOpen((v) => !v)}
+          >
+            <Terminal size={17} strokeWidth={1.9} />
+          </button>
+          {agentsOpen && (
+            <>
+              <div className="tool-backdrop" onClick={() => setAgentsOpen(false)} />
+              <div className="tool-dropdown">
+                {AGENT_LIST.map((a) => (
+                  <button
+                    key={a.id}
+                    className="dropdown-item"
+                    onClick={() => {
+                      onAddAgent(a.id);
+                      setAgentsOpen(false);
+                    }}
+                  >
+                    <a.icon size={15} strokeWidth={1.8} style={{ color: a.color }} />
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
-      <div className="tool-divider" />
-
-      <div className="tool-menu">
+        <button className="tool-item" title="Adicionar nota" onClick={onAddNote}>
+          <StickyNote size={17} strokeWidth={1.9} />
+        </button>
         <button
-          className={`tool-item ${tool === "draw" || tool === "erase" ? "on" : ""}`}
+          className={`tool-item ${tool === "text" ? "on" : ""}`}
+          title="Texto no canvas"
+          onClick={() => setTool("text")}
+        >
+          <Type size={17} strokeWidth={1.9} />
+        </button>
+        <button className="tool-item" title="Adicionar navegador" onClick={onAddBrowser}>
+          <Globe size={17} strokeWidth={1.9} />
+        </button>
+
+        <div className="tool-divider" />
+
+        <button
+          className={`tool-item ${tool === "draw" || tool === "erase" || drawOpen ? "on" : ""}`}
           title="Desenho"
           onClick={() => setDrawOpen((v) => !v)}
         >
           <Pencil size={17} strokeWidth={1.9} />
         </button>
-        {drawOpen && (
-          <>
-            <div className="tool-backdrop" onClick={() => setDrawOpen(false)} />
-            <div className="tool-dropdown">
-              <button
-                className={`dropdown-item ${tool === "draw" ? "on" : ""}`}
-                onClick={() => {
-                  setTool("draw");
-                  setDrawOpen(false);
-                }}
-              >
-                <Pencil size={15} strokeWidth={1.8} /> Desenhar
-              </button>
-              <button
-                className={`dropdown-item ${tool === "erase" ? "on" : ""}`}
-                onClick={() => {
-                  setTool("erase");
-                  setDrawOpen(false);
-                }}
-              >
-                <Eraser size={15} strokeWidth={1.8} /> Borracha
-              </button>
-              <div className="dropdown-swatches">
-                {COLORS.map((c) => (
-                  <button
-                    key={c}
-                    className={`tool-swatch ${c === color ? "on" : ""}`}
-                    style={{ background: c }}
-                    title="Cor"
-                    onClick={() => {
-                      setColor(c);
-                      setTool("draw");
-                      setDrawOpen(false);
-                    }}
-                  />
-                ))}
-              </div>
-              <button
-                className="dropdown-item danger"
-                onClick={() => {
-                  onClear();
-                  setDrawOpen(false);
-                }}
-              >
-                <Trash2 size={15} strokeWidth={1.8} /> Limpar desenho
-              </button>
-            </div>
-          </>
-        )}
+
+        <div className="tool-divider" />
+
+        <button
+          className={`tool-item ${showRoutines ? "on" : ""}`}
+          title="Rotinas"
+          onClick={() => setShowRoutines((v) => !v)}
+        >
+          <Timer size={17} strokeWidth={1.9} />
+        </button>
+        <button
+          className={`tool-item ${showFloors ? "on" : ""}`}
+          title="Floors"
+          onClick={() => setShowFloors((v) => !v)}
+        >
+          <Layers size={17} strokeWidth={1.9} />
+        </button>
+        <button
+          className={`tool-item ${showOmbro ? "on" : ""}`}
+          title="Ombro"
+          onClick={() => setShowOmbro((v) => !v)}
+        >
+          <Eye size={17} strokeWidth={1.9} />
+        </button>
       </div>
 
-      <div className="tool-divider" />
-
-      <button
-        className={`tool-item ${showRoutines ? "on" : ""}`}
-        title="Rotinas"
-        onClick={() => setShowRoutines((v) => !v)}
-      >
-        <Timer size={17} strokeWidth={1.9} />
-      </button>
-      <button
-        className={`tool-item ${showFloors ? "on" : ""}`}
-        title="Floors"
-        onClick={() => setShowFloors((v) => !v)}
-      >
-        <Layers size={17} strokeWidth={1.9} />
-      </button>
-      <button
-        className={`tool-item ${showOmbro ? "on" : ""}`}
-        title="Ombro"
-        onClick={() => setShowOmbro((v) => !v)}
-      >
-        <Eye size={17} strokeWidth={1.9} />
-      </button>
+      {drawOpen && (
+        <div className="toolbar toolbar-subrow">
+          <button
+            className={`tool-item ${tool === "draw" ? "on" : ""}`}
+            title="Desenhar"
+            onClick={() => setTool("draw")}
+          >
+            <Pencil size={16} strokeWidth={1.9} />
+          </button>
+          <button
+            className={`tool-item ${tool === "erase" ? "on" : ""}`}
+            title="Borracha"
+            onClick={() => setTool("erase")}
+          >
+            <Eraser size={16} strokeWidth={1.9} />
+          </button>
+          <div className="tool-divider" />
+          <div className="tool-swatches">
+            {COLORS.map((c) => (
+              <button
+                key={c}
+                className={`tool-swatch ${c === color ? "on" : ""}`}
+                style={{ background: c }}
+                title="Cor"
+                onClick={() => {
+                  setColor(c);
+                  setTool("draw");
+                }}
+              />
+            ))}
+          </div>
+          <div className="tool-divider" />
+          <button className="tool-item danger" title="Limpar desenho" onClick={onClear}>
+            <Trash2 size={16} strokeWidth={1.9} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

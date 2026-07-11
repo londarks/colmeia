@@ -544,11 +544,19 @@
   touch-action: none;
 }
 /* Barra de ferramentas superior (estilo Excalidraw) */
-.toolbar {
+.toolbar-wrap {
   position: absolute;
   top: 14px;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 30;
+  max-width: calc(100% - 24px);
+}
+.toolbar {
   display: flex;
   align-items: center;
   gap: 3px;
@@ -558,9 +566,25 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  z-index: 30;
-  max-width: calc(100% - 24px);
+  max-width: 100%;
   flex-wrap: wrap;
+}
+.toolbar-subrow {
+  animation: subrowIn 0.12s ease;
+}
+@keyframes subrowIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.tool-item.danger:hover {
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 16%, transparent);
 }
 .tool-item {
   display: inline-flex;
