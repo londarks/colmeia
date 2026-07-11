@@ -389,12 +389,35 @@
   line-height: 1;
 }
 .node-header .dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: var(--agent);
   flex: none;
-  box-shadow: 0 0 8px var(--agent);
+  background: var(--text-faint);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+/* Status do agente */
+.node-header .dot.status-idle {
+  background: var(--text-faint);
+}
+.node-header .dot.status-working {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+  animation: statusPulse 1.1s ease-in-out infinite;
+}
+.node-header .dot.status-waiting {
+  background: var(--warning);
+  box-shadow: 0 0 9px var(--warning);
+  animation: statusPulse 0.7s ease-in-out infinite;
+}
+@keyframes statusPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 .node-header .node-title {
   flex: 1;

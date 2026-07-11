@@ -56,6 +56,7 @@ export interface GraphNode {
   title: string;
   role?: string;
   roleBriefing?: string;
+  content?: string;
 }
 export interface GraphEdge {
   source: string;

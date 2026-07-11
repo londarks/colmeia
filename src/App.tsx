@@ -23,7 +23,7 @@ import { RoutinesPanel } from "./components/RoutinesPanel";
 import { ApprovalsPanel } from "./components/ApprovalsPanel";
 import { TitleBar } from "./components/TitleBar";
 import { AGENTS, AGENT_LIST, type AgentId } from "./lib/agents";
-import { ROLE_MAP } from "./lib/roles";
+import { ROLES, ROLE_MAP, type Role } from "./lib/roles";
 import { THEMES, getStoredTheme, applyTheme } from "./lib/theme";
 import {
   setGraph,
@@ -119,13 +119,14 @@ export default function App() {
   // Espelha o grafo no backend sempre que nós/arestas mudam (escopo do roteamento).
   useEffect(() => {
     const graphNodes = nodes.map((n) => {
-      const d = n.data as { title?: string; role?: string };
+      const d = n.data as { title?: string; role?: string; content?: string };
       return {
         id: n.id,
         type: n.type ?? "terminal",
         title: d.title ?? n.id,
         role: d.role ? (ROLE_MAP[d.role]?.label ?? "") : "",
         roleBriefing: d.role ? (ROLE_MAP[d.role]?.briefing ?? "") : "",
+        content: d.content ?? "",
       };
     });
     const graphEdges = edges.map((e) => ({ source: e.source, target: e.target }));
@@ -233,6 +234,94 @@ export default function App() {
     [setEdges],
   );
 
+  // Recruta um novo agente (via `colmeia recruit`), já conectado ao recrutador.
+  // Tolerante: descobre o runtime (claude por padrão) e o papel por aproximação,
+  // aceitando os argumentos em qualquer ordem.
+  const recruitAgent = useCallback(
+    (arg1: string, arg2: string, sourceId: string) => {
+      const cands = [arg1, arg2]
+        .map((s) => (s || "").toLowerCase().trim())
+        .filter(Boolean);
+      const AGENT_IDS: AgentId[] = ["shell", "claude", "codex", "ollama"];
+      const agentId =
+        (cands.find((c) => AGENT_IDS.includes(c as AgentId)) as AgentId) ||
+        "claude";
+      // Papel por aproximação (ex.: "engenheiro-software" → Engenheiro).
+      const matchRole = (s: string) =>
+        ROLES.find((r) => {
+          const label = r.label.toLowerCase();
+          return (
+            r.id === s ||
+            label === s ||
+            (s.length >= 4 &&
+              (s.includes(label) || label.includes(s) || s.includes(r.id)))
+          );
+        });
+      let role: Role | undefined;
+      for (const c of cands) {
+        role = matchRole(c);
+        if (role) break;
+      }
+      counter += 1;
+      const id = `${agentId}-${counter}`;
+      const offset = (counter % 5) * 42;
+      setNodes((nds) => {
+        const sameKind = nds.filter(
+          (n) => (n.data as { agent?: AgentId }).agent === agentId,
+        ).length;
+        const title = `${AGENTS[agentId].label} ${sameKind + 1}`;
+        return nds.concat({
+          id,
+          type: "terminal",
+          position: { x: 160 + offset, y: 130 + offset },
+          data: { agent: agentId, title, role: role?.id },
+          style: { width: 500, height: 340 },
+        });
+      });
+      if (sourceId) {
+        setEdges((eds) =>
+          addEdge(
+            { id: `e-${sourceId}-${id}`, source: sourceId, target: id, animated: true },
+            eds,
+          ),
+        );
+      }
+    },
+    [setNodes, setEdges],
+  );
+
+  // Dispensa (remove) um agente pelo título (via `colmeia dismiss`).
+  const dismissAgent = useCallback(
+    (title: string) => {
+      const node = nodesRef.current.find(
+        (n) =>
+          n.type === "terminal" &&
+          ((n.data as { title?: string }).title ?? n.id).toLowerCase() ===
+            title.toLowerCase(),
+      );
+      if (node) {
+        setNodes((nds) => nds.filter((n) => n.id !== node.id));
+        setEdges((eds) =>
+          eds.filter((e) => e.source !== node.id && e.target !== node.id),
+        );
+      }
+    },
+    [setNodes, setEdges],
+  );
+
+  // Sincroniza o status "aguardando aprovação" nos nós que têm aprovação pendente.
+  useEffect(() => {
+    const waitingIds = new Set(approvals.map((a) => a.node));
+    setNodes((nds) =>
+      nds.map((n) => {
+        const w = waitingIds.has(n.id);
+        if (Boolean((n.data as { waiting?: boolean }).waiting) === w) return n;
+        return { ...n, data: { ...n.data, waiting: w } };
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [approvals]);
+
   // Ouve pedidos do backend (agente rodando `colmeia note` / `connect` / interações).
   useEffect(() => {
     const subs = [
@@ -241,6 +330,13 @@ export default function App() {
       ),
       listen<{ source: string; target: string }>("colmeia://connect", (e) =>
         connectByTitle(e.payload.source, e.payload.target),
+      ),
+      listen<{ agent: string; role: string; source: string }>(
+        "colmeia://recruit",
+        (e) => recruitAgent(e.payload.agent, e.payload.role, e.payload.source),
+      ),
+      listen<{ title: string }>("colmeia://dismiss", (e) =>
+        dismissAgent(e.payload.title),
       ),
       listen<{ source: string; target: string }>("colmeia://interaction", (e) =>
         highlightEdge(e.payload.source, e.payload.target),
@@ -255,7 +351,7 @@ export default function App() {
     return () => {
       subs.forEach((p) => p.then((un) => un()));
     };
-  }, [addNoteNode, connectByTitle, highlightEdge]);
+  }, [addNoteNode, connectByTitle, highlightEdge, recruitAgent, dismissAgent]);
 
   const nodeColor = useCallback(
     (n: Node) =>

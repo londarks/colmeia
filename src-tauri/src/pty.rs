@@ -43,6 +43,8 @@ pub struct NodeInfo {
     pub role: String,
     #[serde(default, rename = "roleBriefing")]
     pub role_briefing: String,
+    #[serde(default)]
+    pub content: String,
 }
 
 /// Info de uma aresta (conexão) do canvas.
@@ -162,6 +164,18 @@ impl Shared {
             .filter(|n| n.kind == "terminal")
             .filter(|n| scoped.as_ref().map_or(true, |ids| ids.contains(&n.id)))
             .map(|n| (n.id.clone(), n.title.clone(), n.role.clone()))
+            .collect()
+    }
+
+    /// Notas conectadas a `source` (título, conteúdo) — usadas por `colmeia context`.
+    pub fn connected_notes(&self, source: &str) -> Vec<(String, String)> {
+        let ids = self.connected_ids(source);
+        self.nodes
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|n| n.kind == "note" && ids.contains(&n.id))
+            .map(|n| (n.title.clone(), n.content.clone()))
             .collect()
     }
 
@@ -373,6 +387,24 @@ fn claude_settings_path() -> PathBuf {
     cli_bin_dir().join("colmeia-hooks.json")
 }
 
+/// Texto adicionado ao system prompt do Claude para ensiná-lo sobre o colmeia.
+fn colmeia_onboarding(node_id: &str) -> String {
+    format!(
+        "Você está rodando DENTRO do colmeia, um orquestrador de agentes de IA em canvas. \
+Você é o nó de id \"{node_id}\". Você tem uma CLI de shell chamada `colmeia` disponível no PATH: \
+são COMANDOS DE TERMINAL que você executa com a ferramenta Bash — NÃO são skills, subagentes internos, \
+nem slash-commands do Claude. Comandos:\n\
+- `colmeia context`  -> lê as notas de instrução conectadas a você. RODE ISSO PRIMEIRO ao receber uma tarefa.\n\
+- `colmeia list`  -> lista os agentes conectados a você e seus papéis.\n\
+- `colmeia check \"<nome>\"`  -> lê a saída recente de outro agente.\n\
+- `colmeia ask \"<nome>\" \"<mensagem>\"`  -> delega/manda uma mensagem a outro agente conectado.\n\
+- `colmeia recruit \"<papel>\"`  -> cria um novo agente da equipe (ex.: `colmeia recruit engenheiro`), já conectado a você.\n\
+- também: `colmeia dismiss \"<título>\"`, `colmeia note \"<t>\" \"<c>\"`, `colmeia connect \"<a>\" \"<b>\"`.\n\
+Os agentes conectados são definidos pelas linhas do canvas. Ao coordenar, use SEMPRE esses comandos de shell — \
+nunca os seus próprios subagentes/tools internos."
+    )
+}
+
 /// Cria uma nova sessão de PTY e começa a transmitir a saída pelo `channel`.
 #[tauri::command]
 pub fn pty_spawn(
@@ -404,11 +436,13 @@ pub fn pty_spawn(
     let sep = if cfg!(windows) { ";" } else { ":" };
     let mut cmd = CommandBuilder::new(&command);
     cmd.args(&args);
-    // Para o Claude Code, injeta o hook de aprovação via --settings (caminho do
-    // arquivo direto — esta versão do CLI não usa o prefixo "@").
+    // Para o Claude Code: hook de aprovação via --settings + onboarding do colmeia
+    // no system prompt (para o agente entender que `colmeia ...` são comandos de shell).
     if command.eq_ignore_ascii_case("claude") && bin_dir.is_some() {
         cmd.arg("--settings");
         cmd.arg(claude_settings_path().to_string_lossy().to_string());
+        cmd.arg("--append-system-prompt");
+        cmd.arg(colmeia_onboarding(&id));
     }
     for (k, v) in std::env::vars() {
         if k.eq_ignore_ascii_case("path") {

@@ -75,6 +75,27 @@ struct ConnectBody {
 }
 
 #[derive(Deserialize)]
+struct RecruitBody {
+    agent: String,
+    #[serde(default)]
+    role: String,
+}
+#[derive(Deserialize)]
+struct DismissBody {
+    title: String,
+}
+#[derive(Clone, Serialize)]
+struct RecruitPayload {
+    agent: String,
+    role: String,
+    source: String,
+}
+#[derive(Clone, Serialize)]
+struct DismissPayload {
+    title: String,
+}
+
+#[derive(Deserialize)]
 struct RoutineBody {
     action: String,
     #[serde(default)]
@@ -235,6 +256,39 @@ fn route(
                 (200, format!("Nota \"{}\" criada no canvas.", b.title))
             }
             Err(_) => (400, "Corpo inválido (esperado JSON {title, content}).".into()),
+        },
+        (Method::Get, "/context") => {
+            let notes = shared.connected_notes(source);
+            if notes.is_empty() {
+                return (200, "Nenhuma nota de instrução conectada a este agente.".into());
+            }
+            let text = notes
+                .iter()
+                .map(|(title, content)| format!("### NOTA: {title}\n{content}"))
+                .collect::<Vec<_>>()
+                .join("\n\n");
+            (200, text)
+        }
+        (Method::Post, "/recruit") => match serde_json::from_str::<RecruitBody>(body) {
+            Ok(b) => {
+                let _ = app.emit(
+                    "colmeia://recruit",
+                    RecruitPayload {
+                        agent: b.agent.clone(),
+                        role: b.role.clone(),
+                        source: source.to_string(),
+                    },
+                );
+                (200, format!("Recrutando agente \"{}\".", b.agent))
+            }
+            Err(_) => (400, "Corpo inválido (esperado JSON {agent, role}).".into()),
+        },
+        (Method::Post, "/dismiss") => match serde_json::from_str::<DismissBody>(body) {
+            Ok(b) => {
+                let _ = app.emit("colmeia://dismiss", DismissPayload { title: b.title.clone() });
+                (200, format!("Dispensando \"{}\".", b.title))
+            }
+            Err(_) => (400, "Corpo inválido (esperado JSON {title}).".into()),
         },
         (Method::Post, "/connect") => match serde_json::from_str::<ConnectBody>(body) {
             Ok(b) => {

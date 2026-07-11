@@ -19,6 +19,10 @@ function usage() {
   console.log('  colmeia ask "<agente>" "<prompt>"   envia um prompt para outro agente');
   console.log('  colmeia note "<título>" "<texto>"   cria uma nota no canvas');
   console.log('  colmeia connect "<a>" "<b>"         conecta dois nós no canvas');
+  console.log("  colmeia context                     lê as notas conectadas a você (instruções)");
+  console.log('  colmeia recruit "<papel>"           cria um agente (claude) com esse papel, conectado a você');
+  console.log("                                      papeis: engenheiro, revisor, arquiteto, testador, orquestrador");
+  console.log('  colmeia dismiss "<título>"          remove um agente do canvas');
   console.log('  colmeia routine create "<t>" <s> "<cmd>"  agenda um comando a cada <s>s');
   console.log("  colmeia routine list                lista as rotinas ativas");
   console.log('  colmeia routine delete "<id>"       remove uma rotina');
@@ -82,6 +86,17 @@ async function main() {
       const target = args[2];
       if (!source || !target) return fail('Uso: colmeia connect "<a>" "<b>"');
       console.log(await request("/connect", "POST", { source, target }));
+    } else if (command === "context") {
+      console.log(await request("/context", "GET"));
+    } else if (command === "recruit") {
+      const agent = args[1];
+      const role = args[2] || "";
+      if (!agent) return fail('Uso: colmeia recruit "<papel>"  (ex: engenheiro, revisor)');
+      console.log(await request("/recruit", "POST", { agent, role }));
+    } else if (command === "dismiss") {
+      const title = args[1];
+      if (!title) return fail('Uso: colmeia dismiss "<título>"');
+      console.log(await request("/dismiss", "POST", { title }));
     } else if (command === "routine") {
       const sub = args[1];
       if (sub === "create") {

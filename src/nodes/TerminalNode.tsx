@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import {
   Handle,
   Position,
@@ -26,6 +26,7 @@ export interface TerminalNodeData {
   agent: AgentId;
   title?: string;
   role?: string;
+  waiting?: boolean;
   cwd?: string;
 }
 
@@ -35,7 +36,11 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
   const role = d.role ? ROLE_MAP[d.role] : undefined;
   const termRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
+  const [busy, setBusy] = useState(false);
+  const busyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const { deleteElements, updateNodeData } = useReactFlow();
+
+  const status = d.waiting ? "waiting" : busy ? "working" : "idle";
 
   const onRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const roleId = e.target.value;
@@ -102,6 +107,9 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
       (msg) => {
         if (msg.kind === "data") {
           term.write(b64ToBytes(msg.b64));
+          setBusy(true);
+          clearTimeout(busyTimer.current);
+          busyTimer.current = setTimeout(() => setBusy(false), 1200);
         } else {
           exited = true;
           term.write("\r\n\x1b[90m[processo encerrado]\x1b[0m\r\n");
@@ -135,6 +143,7 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
 
     return () => {
       window.removeEventListener("colmeia:themechange", onThemeChange);
+      clearTimeout(busyTimer.current);
       ro.disconnect();
       onData.dispose();
       onResize.dispose();
@@ -160,7 +169,16 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
       <Handle type="target" position={Position.Left} className="term-handle" />
 
       <div className="node-header">
-        <span className="dot" />
+        <span
+          className={`dot status-${status}`}
+          title={
+            status === "waiting"
+              ? "Aguardando aprovação"
+              : status === "working"
+                ? "Trabalhando"
+                : "Ocioso"
+          }
+        />
         <span className="node-title">
           <agent.icon className="node-icon" size={13} strokeWidth={1.9} />
           {d.title ?? agent.label}
