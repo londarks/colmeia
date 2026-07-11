@@ -360,6 +360,78 @@
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+
+/* ========================= Browser node ========================= */
+.browser-node {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-editor);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.browser-node.is-selected {
+  border-color: var(--agent);
+  box-shadow: 0 0 0 1px var(--agent), 0 14px 40px rgba(0, 0, 0, 0.55);
+}
+.browser-header {
+  background: color-mix(in srgb, var(--agent) 14%, var(--bg-sidebar));
+}
+.browser-url {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: inherit;
+  padding: 4px 8px;
+  outline: none;
+}
+.browser-url:focus {
+  border-color: var(--agent);
+}
+.browser-go {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  color: var(--agent);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.browser-go:hover {
+  background: color-mix(in srgb, var(--agent) 20%, transparent);
+}
+.browser-body {
+  flex: 1;
+  min-height: 0;
+  background: #fff;
+}
+.browser-body iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+.browser-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  background: var(--bg-editor);
+}
 .term-node.is-selected {
   border-color: var(--agent);
   box-shadow: 0 0 0 1px var(--agent), 0 14px 40px rgba(0, 0, 0, 0.55);

@@ -23,6 +23,7 @@ function usage() {
   console.log('  colmeia recruit "<papel>"           cria um agente (claude) com esse papel, conectado a você');
   console.log("                                      papeis: engenheiro, revisor, arquiteto, testador, orquestrador");
   console.log('  colmeia dismiss "<título>"          remove um agente do canvas');
+  console.log('  colmeia browse "<url>"              abre uma página no canvas e lê o texto dela');
   console.log('  colmeia routine create "<t>" <s> "<cmd>"  agenda um comando a cada <s>s');
   console.log("  colmeia routine list                lista as rotinas ativas");
   console.log('  colmeia routine delete "<id>"       remove uma rotina');
@@ -97,6 +98,10 @@ async function main() {
       const title = args[1];
       if (!title) return fail('Uso: colmeia dismiss "<título>"');
       console.log(await request("/dismiss", "POST", { title }));
+    } else if (command === "browse") {
+      const url = args[1];
+      if (!url) return fail('Uso: colmeia browse "<url>"');
+      console.log(await request("/browse", "POST", { url }));
     } else if (command === "routine") {
       const sub = args[1];
       if (sub === "create") {

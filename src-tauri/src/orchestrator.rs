@@ -96,6 +96,76 @@ struct DismissPayload {
 }
 
 #[derive(Deserialize)]
+struct BrowseBody {
+    url: String,
+}
+#[derive(Clone, Serialize)]
+struct BrowsePayload {
+    url: String,
+    source: String,
+}
+
+/// Extrai o texto legível de um HTML (remove script/style e tags).
+fn html_to_text(html: &str) -> String {
+    let chars: Vec<char> = html.chars().collect();
+    let n = chars.len();
+    let matches = |i: usize, pat: &str| -> bool {
+        let p: Vec<char> = pat.chars().collect();
+        if i + p.len() > n {
+            return false;
+        }
+        p.iter()
+            .enumerate()
+            .all(|(k, pc)| chars[i + k].to_ascii_lowercase() == *pc)
+    };
+    let mut out = String::new();
+    let mut i = 0;
+    while i < n {
+        if chars[i] == '<' {
+            if matches(i, "<script") {
+                while i < n && !matches(i, "</script>") {
+                    i += 1;
+                }
+                i += 9.min(n - i);
+                continue;
+            }
+            if matches(i, "<style") {
+                while i < n && !matches(i, "</style>") {
+                    i += 1;
+                }
+                i += 8.min(n - i);
+                continue;
+            }
+            while i < n && chars[i] != '>' {
+                i += 1;
+            }
+            if i < n {
+                i += 1;
+            }
+            out.push(' ');
+        } else {
+            out.push(chars[i]);
+            i += 1;
+        }
+    }
+    out.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// Busca uma página e devolve seu texto (limitado), para o agente ler.
+fn fetch_page_text(url: &str) -> Result<String, String> {
+    let resp = ureq::get(url)
+        .set(
+            "User-Agent",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36",
+        )
+        .timeout(Duration::from_secs(20))
+        .call()
+        .map_err(|e| e.to_string())?;
+    let html = resp.into_string().map_err(|e| e.to_string())?;
+    Ok(html_to_text(&html).chars().take(12000).collect())
+}
+
+#[derive(Deserialize)]
 struct RoutineBody {
     action: String,
     #[serde(default)]
@@ -289,6 +359,26 @@ fn route(
                 (200, format!("Dispensando \"{}\".", b.title))
             }
             Err(_) => (400, "Corpo inválido (esperado JSON {title}).".into()),
+        },
+        (Method::Post, "/browse") => match serde_json::from_str::<BrowseBody>(body) {
+            Ok(b) => {
+                let mut url = b.url.trim().to_string();
+                if !url.starts_with("http://") && !url.starts_with("https://") {
+                    url = format!("https://{url}");
+                }
+                let _ = app.emit(
+                    "colmeia://browse",
+                    BrowsePayload { url: url.clone(), source: source.to_string() },
+                );
+                match fetch_page_text(&url) {
+                    Ok(text) => (200, format!("[Página aberta no canvas: {url}]\n\n{text}")),
+                    Err(e) => (
+                        200,
+                        format!("[Página aberta no canvas: {url}] (não extraí o texto: {e})"),
+                    ),
+                }
+            }
+            Err(_) => (400, "Corpo inválido (esperado JSON {url}).".into()),
         },
         (Method::Post, "/connect") => match serde_json::from_str::<ConnectBody>(body) {
             Ok(b) => {
