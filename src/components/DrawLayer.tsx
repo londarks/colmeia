@@ -10,13 +10,23 @@ export interface Stroke {
   color: string;
   width: number;
 }
-export type DrawTool = "select" | "draw" | "erase";
+export interface TextItem {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+}
+export type DrawTool = "select" | "draw" | "erase" | "text";
 
 interface Props {
   tool: DrawTool;
+  setTool: (t: DrawTool) => void;
   color: string;
   strokes: Stroke[];
   setStrokes: Dispatch<SetStateAction<Stroke[]>>;
+  texts: TextItem[];
+  setTexts: Dispatch<SetStateAction<TextItem[]>>;
 }
 
 function toPath(pts: Point[]): string {
@@ -24,29 +34,42 @@ function toPath(pts: Point[]): string {
   return "M " + pts.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" L ");
 }
 
-// Camada de desenho livre em coordenadas do canvas (acompanha pan/zoom).
-export function DrawLayer({ tool, color, strokes, setStrokes }: Props) {
+// Camada de desenho livre + texto em coordenadas do canvas (acompanha pan/zoom).
+export function DrawLayer({
+  tool,
+  setTool,
+  color,
+  strokes,
+  setStrokes,
+  texts,
+  setTexts,
+}: Props) {
   const { screenToFlowPosition } = useReactFlow();
   const [cur, setCur] = useState<Point[]>([]);
+  const [editing, setEditing] = useState<string | null>(null);
   const drawing = useRef(false);
-  const active = tool === "draw" || tool === "erase";
+  const active = tool === "draw" || tool === "erase" || tool === "text";
 
   const flowPt = (e: React.PointerEvent): Point =>
     screenToFlowPosition({ x: e.clientX, y: e.clientY });
 
   const eraseAt = (p: Point) => {
     setStrokes((s) =>
-      s.filter(
-        (st) =>
-          !st.points.some((pt) => Math.hypot(pt.x - p.x, pt.y - p.y) < 14),
-      ),
+      s.filter((st) => !st.points.some((pt) => Math.hypot(pt.x - p.x, pt.y - p.y) < 14)),
     );
   };
 
   const down = (e: React.PointerEvent) => {
+    const p = flowPt(e);
+    if (tool === "text") {
+      const id = `text-${Date.now()}`;
+      setTexts((t) => [...t, { id, x: p.x, y: p.y, text: "", color }]);
+      setEditing(id);
+      setTool("select");
+      return;
+    }
     drawing.current = true;
     (e.target as Element).setPointerCapture(e.pointerId);
-    const p = flowPt(e);
     if (tool === "draw") setCur([p]);
     else eraseAt(p);
   };
@@ -61,12 +84,16 @@ export function DrawLayer({ tool, color, strokes, setStrokes }: Props) {
     drawing.current = false;
     if (tool === "draw") {
       setCur((c) => {
-        if (c.length > 1) {
-          setStrokes((s) => [...s, { points: c, color, width: 3 }]);
-        }
+        if (c.length > 1) setStrokes((s) => [...s, { points: c, color, width: 3 }]);
         return [];
       });
     }
+  };
+
+  const commitText = (id: string, value: string) => {
+    if (!value.trim()) setTexts((t) => t.filter((x) => x.id !== id));
+    else setTexts((t) => t.map((x) => (x.id === id ? { ...x, text: value } : x)));
+    setEditing((cur) => (cur === id ? null : cur));
   };
 
   return (
@@ -106,6 +133,28 @@ export function DrawLayer({ tool, color, strokes, setStrokes }: Props) {
             />
           )}
         </svg>
+
+        {texts.map((t) => (
+          <div
+            key={t.id}
+            className="canvas-text nodrag nowheel"
+            contentEditable
+            suppressContentEditableWarning
+            ref={(el) => {
+              if (el && editing === t.id) el.focus();
+            }}
+            style={{
+              position: "absolute",
+              left: t.x,
+              top: t.y,
+              color: t.color,
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onBlur={(e) => commitText(t.id, e.currentTarget.textContent ?? "")}
+          >
+            {t.text}
+          </div>
+        ))}
       </ViewportPortal>
 
       {active && (
@@ -114,7 +163,7 @@ export function DrawLayer({ tool, color, strokes, setStrokes }: Props) {
           onPointerDown={down}
           onPointerMove={move}
           onPointerUp={up}
-          style={{ cursor: tool === "erase" ? "cell" : "crosshair" }}
+          style={{ cursor: tool === "text" ? "text" : tool === "erase" ? "cell" : "crosshair" }}
         />
       )}
     </>

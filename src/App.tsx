@@ -14,28 +14,25 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import { listen } from "@tauri-apps/api/event";
-import {
-  StickyNote,
-  Timer,
-  Layers,
-  Eye,
-  Globe,
-  PanelLeftClose,
-  PanelLeft,
-} from "lucide-react";
+import { PanelLeftClose, PanelLeft } from "lucide-react";
 import logoUrl from "./assets/logo.png";
 import { TerminalNode } from "./nodes/TerminalNode";
 import { NoteNode } from "./nodes/NoteNode";
 import { BrowserNode } from "./nodes/BrowserNode";
 import { DeletableEdge } from "./components/DeletableEdge";
-import { DrawLayer, type DrawTool, type Stroke } from "./components/DrawLayer";
-import { DrawToolbar } from "./components/DrawToolbar";
+import {
+  DrawLayer,
+  type DrawTool,
+  type Stroke,
+  type TextItem,
+} from "./components/DrawLayer";
+import { Toolbar } from "./components/Toolbar";
 import { RoutinesPanel } from "./components/RoutinesPanel";
 import { ApprovalsPanel } from "./components/ApprovalsPanel";
 import { FloorsPanel } from "./components/FloorsPanel";
 import { OmbroPanel } from "./components/OmbroPanel";
 import { TitleBar } from "./components/TitleBar";
-import { AGENTS, AGENT_LIST, type AgentId } from "./lib/agents";
+import { AGENTS, type AgentId } from "./lib/agents";
 import { ROLES, ROLE_MAP, type Role } from "./lib/roles";
 import { THEMES, getStoredTheme, applyTheme } from "./lib/theme";
 import {
@@ -60,6 +57,7 @@ export default function App() {
   const [tool, setTool] = useState<DrawTool>("select");
   const [drawColor, setDrawColor] = useState("#e6e9ef");
   const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [texts, setTexts] = useState<TextItem[]>([]);
   const nodeTypes = useMemo<NodeTypes>(
     () => ({
       terminal: TerminalNode,
@@ -84,6 +82,8 @@ export default function App() {
   edgesRef.current = edges;
   const strokesRef = useRef(strokes);
   strokesRef.current = strokes;
+  const textsRef = useRef(texts);
+  textsRef.current = texts;
 
   // Persistência: só salva depois do carregamento inicial (evita salvar vazio).
   const readyRef = useRef(false);
@@ -105,6 +105,7 @@ export default function App() {
       data: e.data,
     })),
     strokes: strokesRef.current,
+    texts: textsRef.current,
   });
 
   // Carrega o workspace salvo ao iniciar.
@@ -115,6 +116,7 @@ export default function App() {
           setNodes(ws.nodes as Node[]);
           setEdges((ws.edges as Edge[]) ?? []);
           setStrokes(((ws as { strokes?: Stroke[] }).strokes as Stroke[]) ?? []);
+          setTexts(((ws as { texts?: TextItem[] }).texts as TextItem[]) ?? []);
           // Evita colisão de ids ao criar novos nós.
           const maxN = (ws.nodes as Node[]).reduce((m, n) => {
             const num = parseInt(String(n.id).split("-").pop() ?? "0", 10);
@@ -138,7 +140,7 @@ export default function App() {
       workspaceSave(buildWorkspace()).catch(() => {});
     }, 800);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, edges, strokes]);
+  }, [nodes, edges, strokes, texts]);
 
   useEffect(() => {
     applyTheme(theme);
@@ -544,77 +546,7 @@ export default function App() {
               <PanelLeftClose size={16} strokeWidth={1.9} />
             </button>
           </div>
-          <div className="side-section">
-            <div className="side-label">Adicionar</div>
-          <div className="side-actions">
-            {AGENT_LIST.map((a) => (
-              <button
-                key={a.id}
-                className="side-btn"
-                style={{ ["--c" as string]: a.color } as React.CSSProperties}
-                onClick={() => addNode(a.id)}
-                title={`Adicionar ${a.label}`}
-              >
-                <span className="side-dot" />
-                <a.icon className="side-icon" size={16} strokeWidth={1.75} />
-                <span className="side-btn-label">{a.label}</span>
-              </button>
-            ))}
-            <button
-              className="side-btn"
-              style={{ ["--c" as string]: "#f59e0b" } as React.CSSProperties}
-              onClick={() => addNoteNode("Nota", "")}
-              title="Adicionar nota"
-            >
-              <span className="side-dot" />
-              <StickyNote className="side-icon" size={16} strokeWidth={1.75} />
-              <span className="side-btn-label">Nota</span>
-            </button>
-            <button
-              className="side-btn"
-              style={{ ["--c" as string]: "#38bdf8" } as React.CSSProperties}
-              onClick={() => addBrowserNode()}
-              title="Adicionar navegador"
-            >
-              <span className="side-dot" />
-              <Globe className="side-icon" size={16} strokeWidth={1.75} />
-              <span className="side-btn-label">Browser</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="side-section">
-          <div className="side-label">Ferramentas</div>
-          <button
-            className={`side-btn tool ${showRoutines ? "is-active" : ""}`}
-            style={{ ["--c" as string]: "var(--accent)" } as React.CSSProperties}
-            onClick={() => setShowRoutines((v) => !v)}
-            title="Rotinas (tarefas agendadas)"
-          >
-            <Timer className="side-icon" size={16} strokeWidth={1.75} />
-            <span className="side-btn-label">Rotinas</span>
-          </button>
-          <button
-            className={`side-btn tool ${showFloors ? "is-active" : ""}`}
-            style={{ ["--c" as string]: "var(--accent)" } as React.CSSProperties}
-            onClick={() => setShowFloors((v) => !v)}
-            title="Floors (worktrees isolados)"
-          >
-            <Layers className="side-icon" size={16} strokeWidth={1.75} />
-            <span className="side-btn-label">Floors</span>
-          </button>
-          <button
-            className={`side-btn tool ${showOmbro ? "is-active" : ""}`}
-            style={{ ["--c" as string]: "var(--accent)" } as React.CSSProperties}
-            onClick={() => setShowOmbro((v) => !v)}
-            title="Ombro (supervisor local via Ollama)"
-          >
-            <Eye className="side-icon" size={16} strokeWidth={1.75} />
-            <span className="side-btn-label">Ombro</span>
-          </button>
-        </div>
-
-        <div className="side-spacer" />
+          <div className="side-spacer" />
 
         <div className="side-section">
           <div className="side-label">Tema</div>
@@ -681,18 +613,30 @@ export default function App() {
           <Controls className="controls" showInteractive={false} />
           <DrawLayer
             tool={tool}
+            setTool={setTool}
             color={drawColor}
             strokes={strokes}
             setStrokes={setStrokes}
+            texts={texts}
+            setTexts={setTexts}
           />
         </ReactFlow>
 
-        <DrawToolbar
+        <Toolbar
           tool={tool}
           setTool={setTool}
           color={drawColor}
           setColor={setDrawColor}
           onClear={() => setStrokes([])}
+          onAddAgent={addNode}
+          onAddNote={() => addNoteNode("Nota", "")}
+          onAddBrowser={() => addBrowserNode()}
+          showRoutines={showRoutines}
+          setShowRoutines={setShowRoutines}
+          showFloors={showFloors}
+          setShowFloors={setShowFloors}
+          showOmbro={showOmbro}
+          setShowOmbro={setShowOmbro}
         />
 
         {showRoutines && (

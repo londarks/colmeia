@@ -115,6 +115,7 @@ export interface WorkspaceData {
   nodes: unknown[];
   edges: unknown[];
   strokes?: unknown[];
+  texts?: unknown[];
 }
 
 export function workspaceSave(data: WorkspaceData): Promise<void> {
