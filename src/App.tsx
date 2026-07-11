@@ -14,13 +14,14 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import { listen } from "@tauri-apps/api/event";
-import { StickyNote, Timer, Layers, Eye, Globe, Pencil } from "lucide-react";
+import { StickyNote, Timer, Layers, Eye, Globe } from "lucide-react";
 import logoUrl from "./assets/logo.png";
 import { TerminalNode } from "./nodes/TerminalNode";
 import { NoteNode } from "./nodes/NoteNode";
 import { BrowserNode } from "./nodes/BrowserNode";
-import { DrawingNode } from "./nodes/DrawingNode";
 import { DeletableEdge } from "./components/DeletableEdge";
+import { DrawLayer, type DrawTool, type Stroke } from "./components/DrawLayer";
+import { DrawToolbar } from "./components/DrawToolbar";
 import { RoutinesPanel } from "./components/RoutinesPanel";
 import { ApprovalsPanel } from "./components/ApprovalsPanel";
 import { FloorsPanel } from "./components/FloorsPanel";
@@ -47,12 +48,14 @@ export default function App() {
   const [showFloors, setShowFloors] = useState(false);
   const [showOmbro, setShowOmbro] = useState(false);
   const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
+  const [tool, setTool] = useState<DrawTool>("select");
+  const [drawColor, setDrawColor] = useState("#e6e9ef");
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
   const nodeTypes = useMemo<NodeTypes>(
     () => ({
       terminal: TerminalNode,
       note: NoteNode,
       browser: BrowserNode,
-      drawing: DrawingNode,
     }),
     [],
   );
@@ -70,6 +73,8 @@ export default function App() {
   nodesRef.current = nodes;
   const edgesRef = useRef(edges);
   edgesRef.current = edges;
+  const strokesRef = useRef(strokes);
+  strokesRef.current = strokes;
 
   // Persistência: só salva depois do carregamento inicial (evita salvar vazio).
   const readyRef = useRef(false);
@@ -90,6 +95,7 @@ export default function App() {
       animated: true,
       data: e.data,
     })),
+    strokes: strokesRef.current,
   });
 
   // Carrega o workspace salvo ao iniciar.
@@ -99,6 +105,7 @@ export default function App() {
         if (ws && Array.isArray(ws.nodes)) {
           setNodes(ws.nodes as Node[]);
           setEdges((ws.edges as Edge[]) ?? []);
+          setStrokes(((ws as { strokes?: Stroke[] }).strokes as Stroke[]) ?? []);
           // Evita colisão de ids ao criar novos nós.
           const maxN = (ws.nodes as Node[]).reduce((m, n) => {
             const num = parseInt(String(n.id).split("-").pop() ?? "0", 10);
@@ -122,7 +129,7 @@ export default function App() {
       workspaceSave(buildWorkspace()).catch(() => {});
     }, 800);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, edges]);
+  }, [nodes, edges, strokes]);
 
   useEffect(() => {
     applyTheme(theme);
@@ -216,21 +223,6 @@ export default function App() {
     },
     [setNodes],
   );
-
-  const addDrawingNode = useCallback(() => {
-    counter += 1;
-    const id = `drawing-${counter}`;
-    const offset = (counter % 5) * 42;
-    setNodes((nds) =>
-      nds.concat({
-        id,
-        type: "drawing",
-        position: { x: 200 + offset, y: 200 + offset },
-        data: { strokes: [] },
-        style: { width: 320, height: 260 },
-      }),
-    );
-  }, [setNodes]);
 
   // Abre/atualiza um browser conectado ao agente (via `colmeia browse`).
   const onBrowse = useCallback(
@@ -504,9 +496,7 @@ export default function App() {
         ? "#f59e0b"
         : n.type === "browser"
           ? "#38bdf8"
-          : n.type === "drawing"
-            ? "#94a3b8"
-            : AGENTS[(n.data as { agent: AgentId }).agent]?.color ?? "#666",
+          : AGENTS[(n.data as { agent: AgentId }).agent]?.color ?? "#666",
     [],
   );
 
@@ -571,16 +561,6 @@ export default function App() {
               <Globe className="side-icon" size={16} strokeWidth={1.75} />
               <span className="side-btn-label">Browser</span>
             </button>
-            <button
-              className="side-btn"
-              style={{ ["--c" as string]: "#94a3b8" } as React.CSSProperties}
-              onClick={addDrawingNode}
-              title="Adicionar desenho"
-            >
-              <span className="side-dot" />
-              <Pencil className="side-icon" size={16} strokeWidth={1.75} />
-              <span className="side-btn-label">Desenho</span>
-            </button>
           </div>
         </div>
 
@@ -643,6 +623,8 @@ export default function App() {
           edgeTypes={edgeTypes}
           deleteKeyCode={["Delete"]}
           connectionRadius={48}
+          panOnDrag={tool === "select"}
+          nodesDraggable={tool === "select"}
           fitView
           fitViewOptions={{ minZoom: 1, maxZoom: 1 }}
           minZoom={0.2}
@@ -668,7 +650,21 @@ export default function App() {
             maskColor="rgba(0, 0, 0, 0.55)"
           />
           <Controls className="controls" showInteractive={false} />
+          <DrawLayer
+            tool={tool}
+            color={drawColor}
+            strokes={strokes}
+            setStrokes={setStrokes}
+          />
         </ReactFlow>
+
+        <DrawToolbar
+          tool={tool}
+          setTool={setTool}
+          color={drawColor}
+          setColor={setDrawColor}
+          onClear={() => setStrokes([])}
+        />
 
         {showRoutines && (
           <RoutinesPanel

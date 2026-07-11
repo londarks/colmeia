@@ -114,6 +114,7 @@ export function approvalResolve(
 export interface WorkspaceData {
   nodes: unknown[];
   edges: unknown[];
+  strokes?: unknown[];
 }
 
 export function workspaceSave(data: WorkspaceData): Promise<void> {
