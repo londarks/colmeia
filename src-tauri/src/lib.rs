@@ -1,3 +1,4 @@
+mod floors;
 mod orchestrator;
 mod pty;
 mod workspace;
@@ -31,6 +32,9 @@ pub fn run() {
             pty::approval_resolve,
             workspace::workspace_save,
             workspace::workspace_load,
+            floors::floor_list,
+            floors::floor_create,
+            floors::floor_remove,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

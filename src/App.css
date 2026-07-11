@@ -820,6 +820,75 @@
   color: var(--error);
 }
 
+/* ---- Floors ---- */
+.repo-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.repo-pick:hover {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+.panel-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.floor-item {
+  display: flex !important;
+  flex-direction: column;
+  gap: 6px;
+}
+.floor-main {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  padding: 1px 6px;
+  border-radius: 5px;
+}
+.floor-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.floor-assign {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 8px;
+  font-size: 11.5px;
+  font-family: inherit;
+  color: var(--accent);
+  background: var(--accent-muted);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.floor-assign:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.floor-assign:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ========================= Painel de aprovações ========================= */
 .approvals {
   position: absolute;

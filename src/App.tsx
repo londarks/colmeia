@@ -14,13 +14,14 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import { listen } from "@tauri-apps/api/event";
-import { StickyNote, Timer } from "lucide-react";
+import { StickyNote, Timer, Layers } from "lucide-react";
 import logoUrl from "./assets/logo.png";
 import { TerminalNode } from "./nodes/TerminalNode";
 import { NoteNode } from "./nodes/NoteNode";
 import { DeletableEdge } from "./components/DeletableEdge";
 import { RoutinesPanel } from "./components/RoutinesPanel";
 import { ApprovalsPanel } from "./components/ApprovalsPanel";
+import { FloorsPanel } from "./components/FloorsPanel";
 import { TitleBar } from "./components/TitleBar";
 import { AGENTS, AGENT_LIST, type AgentId } from "./lib/agents";
 import { ROLES, ROLE_MAP, type Role } from "./lib/roles";
@@ -40,6 +41,7 @@ export default function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [theme, setTheme] = useState<string>(getStoredTheme());
   const [showRoutines, setShowRoutines] = useState(false);
+  const [showFloors, setShowFloors] = useState(false);
   const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
   const nodeTypes = useMemo<NodeTypes>(
     () => ({ terminal: TerminalNode, note: NoteNode }),
@@ -384,6 +386,17 @@ export default function App() {
       selectedTerminal.id)
     : "";
 
+  // Atribui um floor (worktree) ao terminal selecionado → reinicia o agente nele.
+  const assignFloor = (path: string) => {
+    const sid = selectedTerminal?.id;
+    if (!sid) return;
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === sid ? { ...n, data: { ...n.data, cwd: path } } : n,
+      ),
+    );
+  };
+
   return (
     <div className="app">
       <TitleBar />
@@ -428,6 +441,15 @@ export default function App() {
           >
             <Timer className="side-icon" size={16} strokeWidth={1.75} />
             <span className="side-btn-label">Rotinas</span>
+          </button>
+          <button
+            className={`side-btn tool ${showFloors ? "is-active" : ""}`}
+            style={{ ["--c" as string]: "var(--accent)" } as React.CSSProperties}
+            onClick={() => setShowFloors((v) => !v)}
+            title="Floors (worktrees isolados)"
+          >
+            <Layers className="side-icon" size={16} strokeWidth={1.75} />
+            <span className="side-btn-label">Floors</span>
           </button>
         </div>
 
@@ -491,6 +513,14 @@ export default function App() {
             terminals={terminals}
             defaultTarget={selectedTerminalTitle}
             onClose={() => setShowRoutines(false)}
+          />
+        )}
+
+        {showFloors && (
+          <FloorsPanel
+            selectedTitle={selectedTerminalTitle}
+            onAssign={assignFloor}
+            onClose={() => setShowFloors(false)}
           />
         )}
 
