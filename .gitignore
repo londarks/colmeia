@@ -25,3 +25,7 @@ dist-ssr
 
 # Claude Code (local)
 .claude/settings.local.json
+
+# Floors (git worktrees criados pelo colmeia)
+*-floor-*
+.git-floor-*
