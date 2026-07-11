@@ -104,6 +104,19 @@ struct BrowsePayload {
     url: String,
     source: String,
 }
+#[derive(Deserialize)]
+struct WebActionBody {
+    selector: String,
+    #[serde(default)]
+    text: String,
+}
+#[derive(Clone, Serialize)]
+struct WebActionPayload {
+    action: String,
+    selector: String,
+    text: String,
+    source: String,
+}
 
 /// Extrai o texto legível de um HTML (remove script/style e tags).
 fn html_to_text(html: &str) -> String {
@@ -380,6 +393,24 @@ fn route(
             }
             Err(_) => (400, "Corpo inválido (esperado JSON {url}).".into()),
         },
+        (Method::Post, "/click") | (Method::Post, "/type") => {
+            match serde_json::from_str::<WebActionBody>(body) {
+                Ok(b) => {
+                    let action = if path == "/click" { "click" } else { "type" };
+                    let _ = app.emit(
+                        "colmeia://webview-action",
+                        WebActionPayload {
+                            action: action.to_string(),
+                            selector: b.selector.clone(),
+                            text: b.text.clone(),
+                            source: source.to_string(),
+                        },
+                    );
+                    (200, format!("Ação '{action}' enviada para \"{}\".", b.selector))
+                }
+                Err(_) => (400, "Corpo inválido (esperado JSON {selector, text?}).".into()),
+            }
+        }
         (Method::Post, "/connect") => match serde_json::from_str::<ConnectBody>(body) {
             Ok(b) => {
                 let _ = app.emit(

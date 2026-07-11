@@ -24,6 +24,8 @@ function usage() {
   console.log("                                      papeis: engenheiro, revisor, arquiteto, testador, orquestrador");
   console.log('  colmeia dismiss "<título>"          remove um agente do canvas');
   console.log('  colmeia browse "<url>"              abre uma página no canvas e lê o texto dela');
+  console.log('  colmeia click "<seletor>"           clica num elemento do navegador conectado');
+  console.log('  colmeia type "<seletor>" "<texto>"  digita num campo do navegador conectado');
   console.log('  colmeia routine create "<t>" <s> "<cmd>"  agenda um comando a cada <s>s');
   console.log("  colmeia routine list                lista as rotinas ativas");
   console.log('  colmeia routine delete "<id>"       remove uma rotina');
@@ -102,6 +104,15 @@ async function main() {
       const url = args[1];
       if (!url) return fail('Uso: colmeia browse "<url>"');
       console.log(await request("/browse", "POST", { url }));
+    } else if (command === "click") {
+      const selector = args[1];
+      if (!selector) return fail('Uso: colmeia click "<seletor>"');
+      console.log(await request("/click", "POST", { selector }));
+    } else if (command === "type") {
+      const selector = args[1];
+      const text = args[2] || "";
+      if (!selector) return fail('Uso: colmeia type "<seletor>" "<texto>"');
+      console.log(await request("/type", "POST", { selector, text }));
     } else if (command === "routine") {
       const sub = args[1];
       if (sub === "create") {

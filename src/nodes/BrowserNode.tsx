@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import {
   Handle,
   Position,
@@ -11,6 +11,7 @@ import { Globe, X, ArrowRight } from "lucide-react";
 export interface BrowserNodeData {
   title?: string;
   url?: string;
+  command?: { action: string; selector: string; text: string; n: number };
 }
 
 const COLOR = "#38bdf8";
@@ -20,6 +21,28 @@ function BrowserNodeInner({ id, data, selected }: NodeProps) {
   const { updateNodeData, deleteElements } = useReactFlow();
   const [input, setInput] = useState(d.url ?? "");
   const [reloadKey, setReloadKey] = useState(0);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Executa click/type vindo do `colmeia click/type`. Funciona só em páginas de
+  // mesma origem — o navegador bloqueia scripting de iframes cross-origin.
+  useEffect(() => {
+    const cmd = d.command;
+    if (!cmd) return;
+    try {
+      const doc = iframeRef.current?.contentWindow?.document;
+      const el = doc?.querySelector(cmd.selector);
+      if (!el) return;
+      if (cmd.action === "click") {
+        (el as HTMLElement).click();
+      } else if (cmd.action === "type") {
+        (el as HTMLInputElement).value = cmd.text ?? "";
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    } catch {
+      /* cross-origin: bloqueado pelo navegador */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [d.command?.n]);
 
   const go = () => {
     let u = input.trim();
@@ -73,6 +96,7 @@ function BrowserNodeInner({ id, data, selected }: NodeProps) {
       <div className="browser-body nodrag nowheel">
         {d.url ? (
           <iframe
+            ref={iframeRef}
             key={reloadKey}
             src={d.url}
             title={id}

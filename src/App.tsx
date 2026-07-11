@@ -273,6 +273,30 @@ export default function App() {
     [setNodes, setEdges],
   );
 
+  // Roteia um click/type para o browser node conectado ao agente.
+  const cmdNonce = useRef(0);
+  const onWebviewAction = useCallback(
+    (action: string, selector: string, text: string, sourceId: string) => {
+      const connected = edgesRef.current
+        .filter((e) => e.source === sourceId || e.target === sourceId)
+        .map((e) => (e.source === sourceId ? e.target : e.source));
+      const bn = nodesRef.current.find(
+        (n) => n.type === "browser" && connected.includes(n.id),
+      );
+      if (!bn) return;
+      cmdNonce.current += 1;
+      const n = cmdNonce.current;
+      setNodes((nds) =>
+        nds.map((x) =>
+          x.id === bn.id
+            ? { ...x, data: { ...x.data, command: { action, selector, text, n } } }
+            : x,
+        ),
+      );
+    },
+    [setNodes],
+  );
+
   // Conecta dois nós resolvendo-os pelo título (usado por `colmeia connect`).
   const connectByTitle = useCallback(
     (source: string, target: string) => {
@@ -441,6 +465,16 @@ export default function App() {
       listen<{ url: string; source: string }>("colmeia://browse", (e) =>
         onBrowse(e.payload.url, e.payload.source),
       ),
+      listen<{ action: string; selector: string; text: string; source: string }>(
+        "colmeia://webview-action",
+        (e) =>
+          onWebviewAction(
+            e.payload.action,
+            e.payload.selector,
+            e.payload.text,
+            e.payload.source,
+          ),
+      ),
       listen<{ source: string; target: string }>("colmeia://interaction", (e) =>
         highlightEdge(e.payload.source, e.payload.target),
       ),
@@ -461,6 +495,7 @@ export default function App() {
     recruitAgent,
     dismissAgent,
     onBrowse,
+    onWebviewAction,
   ]);
 
   const nodeColor = useCallback(

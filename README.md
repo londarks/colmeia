@@ -121,5 +121,6 @@ funciona sem dependências. O Ombro requer o Ollama em execução; os Floors req
 - [x] Floors (isolamento via `git worktree`)
 - [x] Ombro (supervisor local via Ollama)
 - [x] Browser node com leitura de página
-- [ ] Automação do browser (clicar e digitar via webview scriptável)
-- [ ] Conexões tipadas (fluxo de dados e de controle) e desenho livre
+- [x] Conexões tipadas (dados e controle) e desenho livre
+- [x] Automação do browser (clicar e digitar) em páginas de mesma origem
+- [ ] Automação de páginas cross-origin (requer um webview scriptável dedicado)
