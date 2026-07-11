@@ -6,7 +6,9 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine;
@@ -45,6 +47,23 @@ pub struct EdgeInfo {
     pub target: String,
 }
 
+/// Uma rotina agendada: roda um comando num terminal a cada N segundos.
+struct RoutineHandle {
+    stop: Arc<AtomicBool>,
+    target_title: String,
+    interval: u64,
+    command: String,
+}
+
+/// Info de rotina exposta ao frontend / CLI.
+#[derive(Clone, Serialize)]
+pub struct RoutineInfo {
+    pub id: String,
+    pub target: String,
+    pub interval: u64,
+    pub command: String,
+}
+
 /// Uma sessão de PTY viva.
 struct PtySession {
     writer: Box<dyn Write + Send>,
@@ -59,6 +78,7 @@ pub struct Shared {
     sessions: Mutex<HashMap<String, PtySession>>,
     nodes: Mutex<Vec<NodeInfo>>,
     edges: Mutex<Vec<EdgeInfo>>,
+    routines: Mutex<HashMap<String, RoutineHandle>>,
     /// Token exigido em toda chamada ao servidor loopback.
     pub token: String,
     /// Porta do servidor loopback (definida no start).
@@ -76,6 +96,7 @@ impl Shared {
             sessions: Mutex::new(HashMap::new()),
             nodes: Mutex::new(Vec::new()),
             edges: Mutex::new(Vec::new()),
+            routines: Mutex::new(HashMap::new()),
             token,
             port: Mutex::new(0),
         }
@@ -125,6 +146,19 @@ impl Shared {
             .map(|n| n.id.clone())
     }
 
+    /// Resolve um terminal por id OU título; devolve (id, título).
+    pub fn resolve_terminal(&self, target: &str) -> Option<(String, String)> {
+        self.nodes
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|n| {
+                n.kind == "terminal"
+                    && (n.id == target || n.title.eq_ignore_ascii_case(target))
+            })
+            .map(|n| (n.id.clone(), n.title.clone()))
+    }
+
     /// Snapshot do buffer de saída de uma sessão, como texto.
     pub fn buffer_text(&self, id: &str) -> Option<String> {
         let sessions = self.sessions.lock().unwrap();
@@ -139,6 +173,80 @@ impl Shared {
         if let Some(session) = sessions.get_mut(id) {
             let _ = session.writer.write_all(data.as_bytes());
             let _ = session.writer.flush();
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Cria uma rotina: roda `command` no terminal `target_id` a cada `interval` segundos.
+    /// `self` é `&Arc<Self>` para poder clonar o Arc dentro da thread do timer.
+    pub fn create_routine(
+        self: &Arc<Self>,
+        target_id: String,
+        target_title: String,
+        interval: u64,
+        command: String,
+    ) -> String {
+        let id: String = format!(
+            "routine-{}",
+            rand::thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(5)
+                .map(char::from)
+                .collect::<String>()
+        );
+        let stop = Arc::new(AtomicBool::new(false));
+
+        let shared = Arc::clone(self);
+        let stop_thread = stop.clone();
+        let tid = target_id.clone();
+        let cmd = command.clone();
+        let secs = interval.max(1);
+        std::thread::spawn(move || loop {
+            // Espera em passos de 1s para poder parar rápido.
+            for _ in 0..secs {
+                if stop_thread.load(Ordering::Relaxed) {
+                    return;
+                }
+                std::thread::sleep(Duration::from_secs(1));
+            }
+            if stop_thread.load(Ordering::Relaxed) {
+                return;
+            }
+            shared.write_to(&tid, &(cmd.clone() + "\r"));
+        });
+
+        let _ = target_id;
+        self.routines.lock().unwrap().insert(
+            id.clone(),
+            RoutineHandle {
+                stop,
+                target_title,
+                interval,
+                command,
+            },
+        );
+        id
+    }
+
+    pub fn list_routines(&self) -> Vec<RoutineInfo> {
+        self.routines
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(id, r)| RoutineInfo {
+                id: id.clone(),
+                target: r.target_title.clone(),
+                interval: r.interval,
+                command: r.command.clone(),
+            })
+            .collect()
+    }
+
+    pub fn delete_routine(&self, id: &str) -> bool {
+        if let Some(h) = self.routines.lock().unwrap().remove(id) {
+            h.stop.store(true, Ordering::Relaxed);
             true
         } else {
             false
@@ -345,4 +453,33 @@ pub fn pty_kill(state: State<'_, PtyState>, id: String) -> Result<(), String> {
 pub fn set_graph(state: State<'_, PtyState>, nodes: Vec<NodeInfo>, edges: Vec<EdgeInfo>) {
     *state.0.nodes.lock().unwrap() = nodes;
     *state.0.edges.lock().unwrap() = edges;
+}
+
+/// Lista as rotinas ativas.
+#[tauri::command]
+pub fn routines_list(state: State<'_, PtyState>) -> Vec<RoutineInfo> {
+    state.0.list_routines()
+}
+
+/// Cria uma rotina e devolve a lista atualizada.
+#[tauri::command]
+pub fn routine_create(
+    state: State<'_, PtyState>,
+    target: String,
+    interval: u64,
+    command: String,
+) -> Result<Vec<RoutineInfo>, String> {
+    let shared = state.0.clone();
+    let (id, title) = shared
+        .resolve_terminal(&target)
+        .ok_or_else(|| format!("Terminal '{target}' não encontrado."))?;
+    shared.create_routine(id, title, interval, command);
+    Ok(shared.list_routines())
+}
+
+/// Remove uma rotina e devolve a lista atualizada.
+#[tauri::command]
+pub fn routine_delete(state: State<'_, PtyState>, id: String) -> Vec<RoutineInfo> {
+    state.0.delete_routine(&id);
+    state.0.list_routines()
 }

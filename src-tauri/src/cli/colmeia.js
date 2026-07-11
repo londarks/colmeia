@@ -19,6 +19,9 @@ function usage() {
   console.log('  colmeia ask "<agente>" "<prompt>"   envia um prompt para outro agente');
   console.log('  colmeia note "<título>" "<texto>"   cria uma nota no canvas');
   console.log('  colmeia connect "<a>" "<b>"         conecta dois nós no canvas');
+  console.log('  colmeia routine create "<t>" <s> "<cmd>"  agenda um comando a cada <s>s');
+  console.log("  colmeia routine list                lista as rotinas ativas");
+  console.log('  colmeia routine delete "<id>"       remove uma rotina');
 }
 
 function request(path, method, data) {
@@ -79,6 +82,24 @@ async function main() {
       const target = args[2];
       if (!source || !target) return fail('Uso: colmeia connect "<a>" "<b>"');
       console.log(await request("/connect", "POST", { source, target }));
+    } else if (command === "routine") {
+      const sub = args[1];
+      if (sub === "create") {
+        const target = args[2];
+        const interval = Number(args[3]);
+        const cmd = args[4];
+        if (!target || !interval || !cmd)
+          return fail('Uso: colmeia routine create "<terminal>" <segundos> "<comando>"');
+        console.log(await request("/routine", "POST", { action: "create", target, interval, command: cmd }));
+      } else if (sub === "list") {
+        console.log(await request("/routine", "POST", { action: "list" }));
+      } else if (sub === "delete") {
+        const id = args[2];
+        if (!id) return fail('Uso: colmeia routine delete "<id>"');
+        console.log(await request("/routine", "POST", { action: "delete", id }));
+      } else {
+        fail("Uso: colmeia routine [create|list|delete]");
+      }
     } else {
       fail(`Comando desconhecido: ${command}`);
     }

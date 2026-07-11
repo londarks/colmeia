@@ -67,6 +67,19 @@ struct ConnectBody {
     target: String,
 }
 
+#[derive(Deserialize)]
+struct RoutineBody {
+    action: String,
+    #[serde(default)]
+    target: String,
+    #[serde(default)]
+    interval: u64,
+    #[serde(default)]
+    command: String,
+    #[serde(default)]
+    id: String,
+}
+
 /// Eventos emitidos ao frontend (para mutar o canvas a pedido do agente).
 #[derive(Clone, Serialize)]
 struct AddNotePayload {
@@ -77,6 +90,26 @@ struct AddNotePayload {
 struct ConnectPayload {
     source: String,
     target: String,
+}
+/// Emitido quando um agente interage com outro (ask/check) — para acender a aresta.
+#[derive(Clone, Serialize)]
+struct InteractionPayload {
+    source: String,
+    target: String,
+}
+
+/// Avisa o frontend que `source` interagiu com `target` (acende a aresta).
+fn emit_interaction(app: &AppHandle, source: &str, target: &str) {
+    if source.is_empty() {
+        return;
+    }
+    let _ = app.emit(
+        "colmeia://interaction",
+        InteractionPayload {
+            source: source.to_string(),
+            target: target.to_string(),
+        },
+    );
 }
 
 fn handle(shared: &Arc<Shared>, app: &AppHandle, mut request: Request) {
@@ -130,10 +163,13 @@ fn route(
                 return (400, "Uso: colmeia check \"<agente>\"".into());
             }
             match shared.find_terminal_by_title(&agent) {
-                Some(id) => match shared.buffer_text(&id) {
-                    Some(text) => (200, text),
-                    None => (200, "(agente sem saída ainda)".into()),
-                },
+                Some(id) => {
+                    emit_interaction(app, source, &id);
+                    match shared.buffer_text(&id) {
+                        Some(text) => (200, text),
+                        None => (200, "(agente sem saída ainda)".into()),
+                    }
+                }
                 None => (404, format!("Agente \"{agent}\" não encontrado.")),
             }
         }
@@ -141,6 +177,7 @@ fn route(
             Ok(b) => match shared.find_terminal_by_title(&b.agent) {
                 Some(id) => {
                     if shared.write_to(&id, &(b.prompt.clone() + "\r")) {
+                        emit_interaction(app, source, &id);
                         (200, format!("Prompt enviado para \"{}\".", b.agent))
                     } else {
                         (404, "Sessão do agente não está ativa.".into())
@@ -169,6 +206,60 @@ fn route(
                 (200, format!("Conectando \"{}\" → \"{}\".", b.source, b.target))
             }
             Err(_) => (400, "Corpo inválido (esperado JSON {source, target}).".into()),
+        },
+        (Method::Post, "/routine") => match serde_json::from_str::<RoutineBody>(body) {
+            Ok(b) => match b.action.as_str() {
+                "create" => {
+                    if b.target.is_empty() || b.interval == 0 || b.command.is_empty() {
+                        return (400, "Uso: colmeia routine create \"<terminal>\" <segundos> \"<comando>\"".into());
+                    }
+                    match shared.resolve_terminal(&b.target) {
+                        Some((id, title)) => {
+                            let rid = shared.create_routine(
+                                id,
+                                title.clone(),
+                                b.interval,
+                                b.command.clone(),
+                            );
+                            let _ = app.emit("colmeia://routines-changed", ());
+                            (
+                                200,
+                                format!(
+                                    "Rotina {rid} criada: \"{title}\" a cada {}s → {}",
+                                    b.interval, b.command
+                                ),
+                            )
+                        }
+                        None => (404, format!("Terminal \"{}\" não encontrado.", b.target)),
+                    }
+                }
+                "list" => {
+                    let list = shared.list_routines();
+                    if list.is_empty() {
+                        return (200, "Nenhuma rotina ativa.".into());
+                    }
+                    let lines: Vec<String> = list
+                        .iter()
+                        .map(|r| {
+                            format!("  - {} | \"{}\" a cada {}s → {}", r.id, r.target, r.interval, r.command)
+                        })
+                        .collect();
+                    (200, format!("Rotinas ativas:\n{}", lines.join("\n")))
+                }
+                "delete" => {
+                    if b.id.is_empty() {
+                        return (400, "Uso: colmeia routine delete \"<id>\"".into());
+                    }
+                    if shared.delete_routine(&b.id) {
+                        let _ = app.emit("colmeia://routines-changed", ());
+                        (200, format!("Rotina {} removida.", b.id))
+                    } else {
+                        (404, format!("Rotina {} não encontrada.", b.id))
+                    }
+                }
+                _ => (400, "Ação inválida (create|list|delete).".into()),
+            },
+            Err(_) => (400, "Corpo inválido para /routine.".into()),
         },
         _ => (404, "Rota não encontrada.".into()),
     }

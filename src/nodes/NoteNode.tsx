@@ -6,6 +6,7 @@ import {
   useReactFlow,
   type NodeProps,
 } from "@xyflow/react";
+import { StickyNote, X } from "lucide-react";
 
 export interface NoteNodeData {
   title: string;
@@ -16,7 +17,7 @@ const NOTE_COLOR = "#f59e0b";
 
 function NoteNodeInner({ id, data, selected }: NodeProps) {
   const d = data as unknown as NoteNodeData;
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, deleteElements } = useReactFlow();
 
   return (
     <div
@@ -34,15 +35,23 @@ function NoteNodeInner({ id, data, selected }: NodeProps) {
       <Handle type="target" position={Position.Left} className="term-handle" />
 
       <div className="note-header">
-        <span className="grip" aria-hidden>
-          📝
-        </span>
+        <StickyNote className="node-icon" size={14} strokeWidth={1.8} />
         <input
           className="note-title nodrag"
           value={d.title}
           placeholder="Título"
           onChange={(e) => updateNodeData(id, { title: e.target.value })}
         />
+        <button
+          className="node-close nodrag"
+          title="Excluir nota"
+          onClick={(e) => {
+            e.stopPropagation();
+            deleteElements({ nodes: [{ id }] });
+          }}
+        >
+          <X size={13} strokeWidth={2} />
+        </button>
       </div>
 
       <textarea

@@ -69,10 +69,17 @@ Os agentes não recebem auto-encaminhamento de saída. Cada terminal recebe a CL
 - `colmeia list` — agentes conectados a este nó (escopo pelas arestas do canvas)
 - `colmeia check "<agente>"` — lê a saída recente (buffer ~16k) de outro terminal
 - `colmeia ask "<agente>" "<prompt>"` — escreve um prompt no stdin de outro terminal
+- `colmeia note "<título>" "<texto>"` — cria uma nota no canvas (via evento `colmeia://add-note`)
+- `colmeia connect "<a>" "<b>"` — conecta dois nós (via evento `colmeia://connect`)
+- `colmeia routine create|list|delete` — tarefas agendadas (timer em thread no Rust)
 
 O frontend espelha o grafo via `set_graph` a cada mudança de nós/arestas. Toda chamada ao servidor
 exige o token da sessão (sem isso → 403); o bind é só em 127.0.0.1 e **não há CORS**. Regra: manter esse
 endurecimento; nunca abrir CORS nem expor o servidor fora do loopback.
+
+Mutações do canvas pedidas pelo agente (note/connect/routine) usam **eventos Tauri** backend→frontend;
+o servidor loopback roda no `setup()` para ter o `AppHandle`. O canvas é persistido em `workspace.json`
+(`app_data_dir`) via `workspace_save`/`workspace_load` — auto-load ao abrir, auto-save com debounce.
 
 ## Convenções
 

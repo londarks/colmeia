@@ -29,6 +29,8 @@
   --warning: #ffaf5c;
   --error: #ff5e5e;
   --info: #5ec8ff;
+  /* cor da conexão durante uma interação (contrasta com o accent verde) */
+  --edge-active: #5ec8ff;
 }
 
 [data-theme="tokyo-night"] {
@@ -56,6 +58,8 @@
   --warning: #e0af68;
   --error: #f7768e;
   --info: #7aa2f7;
+  /* accent é azul → interação fica verde */
+  --edge-active: #9ece6a;
 }
 
 [data-theme="dracula"] {
@@ -83,6 +87,8 @@
   --warning: #f1fa8c;
   --error: #ff5555;
   --info: #8be9fd;
+  /* accent é roxo → interação fica ciano */
+  --edge-active: #8be9fd;
 }
 
 [data-theme="rose-pine"] {
@@ -110,6 +116,8 @@
   --warning: #f6c177;
   --error: #eb6f92;
   --info: #c4a7e7;
+  /* accent é lilás → interação fica foam/azul */
+  --edge-active: #9ccfd8;
 }
 
 /* ---------- Base ---------- */

@@ -14,11 +14,15 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import { listen } from "@tauri-apps/api/event";
+import { StickyNote, Timer } from "lucide-react";
+import logoUrl from "./assets/logo.png";
 import { TerminalNode } from "./nodes/TerminalNode";
 import { NoteNode } from "./nodes/NoteNode";
+import { DeletableEdge } from "./components/DeletableEdge";
+import { RoutinesPanel } from "./components/RoutinesPanel";
 import { AGENTS, AGENT_LIST, type AgentId } from "./lib/agents";
 import { THEMES, getStoredTheme, applyTheme } from "./lib/theme";
-import { setGraph } from "./lib/pty";
+import { setGraph, workspaceSave, workspaceLoad } from "./lib/pty";
 import "./App.css";
 
 let counter = 0;
@@ -27,14 +31,77 @@ export default function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [theme, setTheme] = useState<string>(getStoredTheme());
+  const [showRoutines, setShowRoutines] = useState(false);
   const nodeTypes = useMemo<NodeTypes>(
     () => ({ terminal: TerminalNode, note: NoteNode }),
     [],
   );
+  const edgeTypes = useMemo(() => ({ default: DeletableEdge }), []);
 
-  // Referência sempre atualizada dos nós, para resolver títulos em callbacks.
+  const terminals = nodes
+    .filter((n) => n.type === "terminal")
+    .map((n) => ({
+      id: n.id,
+      title: (n.data as { title?: string }).title ?? n.id,
+    }));
+
+  // Referências sempre atualizadas, para usar em callbacks/timers.
   const nodesRef = useRef(nodes);
   nodesRef.current = nodes;
+  const edgesRef = useRef(edges);
+  edgesRef.current = edges;
+
+  // Persistência: só salva depois do carregamento inicial (evita salvar vazio).
+  const readyRef = useRef(false);
+  const saveTimer = useRef<number | undefined>(undefined);
+
+  const buildWorkspace = () => ({
+    nodes: nodesRef.current.map((n) => ({
+      id: n.id,
+      type: n.type,
+      position: n.position,
+      data: n.data,
+      style: n.style,
+    })),
+    edges: edgesRef.current.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      animated: true,
+    })),
+  });
+
+  // Carrega o workspace salvo ao iniciar.
+  useEffect(() => {
+    workspaceLoad()
+      .then((ws) => {
+        if (ws && Array.isArray(ws.nodes)) {
+          setNodes(ws.nodes as Node[]);
+          setEdges((ws.edges as Edge[]) ?? []);
+          // Evita colisão de ids ao criar novos nós.
+          const maxN = (ws.nodes as Node[]).reduce((m, n) => {
+            const num = parseInt(String(n.id).split("-").pop() ?? "0", 10);
+            return Number.isFinite(num) ? Math.max(m, num) : m;
+          }, 0);
+          counter = Math.max(counter, maxN);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        readyRef.current = true;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-salva (debounced) a cada mudança, depois do carregamento inicial.
+  useEffect(() => {
+    if (!readyRef.current) return;
+    window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      workspaceSave(buildWorkspace()).catch(() => {});
+    }, 800);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, edges]);
 
   useEffect(() => {
     applyTheme(theme);
@@ -120,7 +187,39 @@ export default function App() {
     [setEdges],
   );
 
-  // Ouve pedidos do backend (agente rodando `colmeia note` / `colmeia connect`).
+  // Acende a aresta entre dois nós quando um agente interage com o outro.
+  const edgeTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const highlightEdge = useCallback(
+    (source: string, target: string) => {
+      let matchedId: string | null = null;
+      setEdges((eds) =>
+        eds.map((e) => {
+          const match =
+            (e.source === source && e.target === target) ||
+            (e.source === target && e.target === source);
+          if (match) {
+            matchedId = e.id;
+            return { ...e, data: { ...e.data, active: true } };
+          }
+          return e;
+        }),
+      );
+      if (matchedId) {
+        const eid = matchedId;
+        clearTimeout(edgeTimers.current[eid]);
+        edgeTimers.current[eid] = setTimeout(() => {
+          setEdges((eds) =>
+            eds.map((e) =>
+              e.id === eid ? { ...e, data: { ...e.data, active: false } } : e,
+            ),
+          );
+        }, 1600);
+      }
+    },
+    [setEdges],
+  );
+
+  // Ouve pedidos do backend (agente rodando `colmeia note` / `connect` / interações).
   useEffect(() => {
     const subs = [
       listen<{ title: string; content: string }>("colmeia://add-note", (e) =>
@@ -129,11 +228,14 @@ export default function App() {
       listen<{ source: string; target: string }>("colmeia://connect", (e) =>
         connectByTitle(e.payload.source, e.payload.target),
       ),
+      listen<{ source: string; target: string }>("colmeia://interaction", (e) =>
+        highlightEdge(e.payload.source, e.payload.target),
+      ),
     ];
     return () => {
       subs.forEach((p) => p.then((un) => un()));
     };
-  }, [addNoteNode, connectByTitle]);
+  }, [addNoteNode, connectByTitle, highlightEdge]);
 
   const nodeColor = useCallback(
     (n: Node) =>
@@ -143,56 +245,86 @@ export default function App() {
     [],
   );
 
+  // Terminal atualmente selecionado no canvas — alvo padrão de novas rotinas.
+  const selectedTerminal = nodes.find(
+    (n) => n.type === "terminal" && n.selected,
+  );
+  const selectedTerminalTitle = selectedTerminal
+    ? ((selectedTerminal.data as { title?: string }).title ??
+      selectedTerminal.id)
+    : "";
+
   return (
     <div className="app">
-      <header className="topbar">
+      <aside className="sidebar">
         <div className="brand">
-          <span className="brand-mark">🐝</span>
-          <b>colmeia</b>
-          <span className="tag">orquestrador de agentes</span>
+          <img src={logoUrl} className="brand-logo" alt="colmeia" />
+          <div className="brand-text">
+            <b>colmeia</b>
+            <span className="tag">orquestrador</span>
+          </div>
         </div>
 
-        <div className="spacer" />
-
-        <div className="add-group">
-          {AGENT_LIST.map((a) => (
+        <div className="side-section">
+          <div className="side-label">Adicionar</div>
+          <div className="side-actions">
+            {AGENT_LIST.map((a) => (
+              <button
+                key={a.id}
+                className="side-btn"
+                style={{ ["--c" as string]: a.color } as React.CSSProperties}
+                onClick={() => addNode(a.id)}
+                title={`Adicionar ${a.label}`}
+              >
+                <span className="side-dot" />
+                <a.icon className="side-icon" size={16} strokeWidth={1.75} />
+                <span className="side-btn-label">{a.label}</span>
+              </button>
+            ))}
             <button
-              key={a.id}
-              className="add-btn"
-              style={{ ["--c" as string]: a.color } as React.CSSProperties}
-              onClick={() => addNode(a.id)}
-              title={`Adicionar ${a.label}`}
+              className="side-btn"
+              style={{ ["--c" as string]: "#f59e0b" } as React.CSSProperties}
+              onClick={() => addNoteNode("Nota", "")}
+              title="Adicionar nota"
             >
-              <span className="add-emoji">{a.emoji}</span>
-              {a.label}
+              <span className="side-dot" />
+              <StickyNote className="side-icon" size={16} strokeWidth={1.75} />
+              <span className="side-btn-label">Nota</span>
             </button>
-          ))}
+          </div>
+        </div>
+
+        <div className="side-section">
+          <div className="side-label">Ferramentas</div>
           <button
-            className="add-btn"
-            style={{ ["--c" as string]: "#f59e0b" } as React.CSSProperties}
-            onClick={() => addNoteNode("Nota", "")}
-            title="Adicionar nota"
+            className={`side-btn tool ${showRoutines ? "is-active" : ""}`}
+            style={{ ["--c" as string]: "var(--accent)" } as React.CSSProperties}
+            onClick={() => setShowRoutines((v) => !v)}
+            title="Rotinas (tarefas agendadas)"
           >
-            <span className="add-emoji">📝</span>
-            Nota
+            <Timer className="side-icon" size={16} strokeWidth={1.75} />
+            <span className="side-btn-label">Rotinas</span>
           </button>
         </div>
 
-        <div className="divider" />
+        <div className="side-spacer" />
 
-        <label className="theme-picker" title="Tema">
-          <span className="theme-swatch" />
-          <select value={theme} onChange={(e) => setTheme(e.target.value)}>
-            {THEMES.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </header>
+        <div className="side-section">
+          <div className="side-label">Tema</div>
+          <label className="theme-picker" title="Tema">
+            <span className="theme-swatch" />
+            <select value={theme} onChange={(e) => setTheme(e.target.value)}>
+              {THEMES.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </aside>
 
-      <div className="canvas">
+      <main className="canvas">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -200,6 +332,9 @@ export default function App() {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          deleteKeyCode={["Delete"]}
+          connectionRadius={48}
           fitView
           minZoom={0.2}
           maxZoom={2}
@@ -226,17 +361,25 @@ export default function App() {
           <Controls className="controls" showInteractive={false} />
         </ReactFlow>
 
+        {showRoutines && (
+          <RoutinesPanel
+            terminals={terminals}
+            defaultTarget={selectedTerminalTitle}
+            onClose={() => setShowRoutines(false)}
+          />
+        )}
+
         {nodes.length === 0 && (
           <div className="empty">
-            <div className="empty-badge">🐝</div>
+            <img src={logoUrl} className="empty-logo" alt="" />
             <h2>Canvas vazio</h2>
             <p>
-              Adicione um agente na barra acima. Cada nó é um <b>terminal real</b>,
-              rodando um shell ou uma CLI de agente de verdade.
+              Adicione um agente na barra à esquerda. Cada nó é um{" "}
+              <b>terminal real</b>, rodando um shell ou uma CLI de agente de verdade.
             </p>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

@@ -60,6 +60,39 @@ export function setGraph(nodes: GraphNode[], edges: GraphEdge[]): Promise<void> 
   return invoke("set_graph", { nodes, edges });
 }
 
+export interface RoutineInfo {
+  id: string;
+  target: string;
+  interval: number;
+  command: string;
+}
+
+export function routinesList(): Promise<RoutineInfo[]> {
+  return invoke("routines_list");
+}
+export function routineCreate(
+  target: string,
+  interval: number,
+  command: string,
+): Promise<RoutineInfo[]> {
+  return invoke("routine_create", { target, interval, command });
+}
+export function routineDelete(id: string): Promise<RoutineInfo[]> {
+  return invoke("routine_delete", { id });
+}
+
+export interface WorkspaceData {
+  nodes: unknown[];
+  edges: unknown[];
+}
+
+export function workspaceSave(data: WorkspaceData): Promise<void> {
+  return invoke("workspace_save", { data });
+}
+export function workspaceLoad(): Promise<WorkspaceData | null> {
+  return invoke("workspace_load");
+}
+
 /** Decodifica um chunk base64 vindo do PTY em bytes crus para o xterm. */
 export function b64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);

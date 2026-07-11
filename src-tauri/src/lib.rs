@@ -1,5 +1,6 @@
 mod orchestrator;
 mod pty;
+mod workspace;
 
 use pty::PtyState;
 use tauri::Manager;
@@ -22,6 +23,11 @@ pub fn run() {
             pty::pty_resize,
             pty::pty_kill,
             pty::set_graph,
+            pty::routines_list,
+            pty::routine_create,
+            pty::routine_delete,
+            workspace::workspace_save,
+            workspace::workspace_load,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

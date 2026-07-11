@@ -3,11 +3,13 @@ import {
   Handle,
   Position,
   NodeResizer,
+  useReactFlow,
   type NodeProps,
 } from "@xyflow/react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
+import { X } from "lucide-react";
 import { AGENTS, type AgentId } from "../lib/agents";
 import { readXtermTheme } from "../lib/theme";
 import { ptySpawn, ptyWrite, ptyResize, ptyKill, b64ToBytes } from "../lib/pty";
@@ -23,6 +25,7 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
   const agent = AGENTS[d.agent];
   const termRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
+  const { deleteElements } = useReactFlow();
 
   useEffect(() => {
     if (!termRef.current || started.current) return;
@@ -113,14 +116,22 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
       <Handle type="target" position={Position.Left} className="term-handle" />
 
       <div className="node-header">
-        <span className="grip" aria-hidden>
-          ⣿
-        </span>
         <span className="dot" />
         <span className="node-title">
-          {agent.emoji} {d.title ?? agent.label}
+          <agent.icon className="node-icon" size={13} strokeWidth={1.9} />
+          {d.title ?? agent.label}
         </span>
         <span className="node-id">{id}</span>
+        <button
+          className="node-close nodrag"
+          title="Fechar terminal"
+          onClick={(e) => {
+            e.stopPropagation();
+            deleteElements({ nodes: [{ id }] });
+          }}
+        >
+          <X size={13} strokeWidth={2} />
+        </button>
       </div>
 
       <div ref={termRef} className="term-body nodrag nowheel" />
