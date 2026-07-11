@@ -11,21 +11,34 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { X } from "lucide-react";
 import { AGENTS, type AgentId } from "../lib/agents";
+import { ROLES, ROLE_MAP } from "../lib/roles";
 import { readXtermTheme } from "../lib/theme";
 import { ptySpawn, ptyWrite, ptyResize, ptyKill, b64ToBytes } from "../lib/pty";
 
 export interface TerminalNodeData {
   agent: AgentId;
   title?: string;
+  role?: string;
   cwd?: string;
 }
 
 function TerminalNodeInner({ id, data, selected }: NodeProps) {
   const d = data as unknown as TerminalNodeData;
   const agent = AGENTS[d.agent];
+  const role = d.role ? ROLE_MAP[d.role] : undefined;
   const termRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
-  const { deleteElements } = useReactFlow();
+  const { deleteElements, updateNodeData } = useReactFlow();
+
+  const onRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const roleId = e.target.value;
+    updateNodeData(id, { role: roleId || undefined });
+    const r = roleId ? ROLE_MAP[roleId] : undefined;
+    // Briefa o agente com o papel (não faz sentido num shell puro).
+    if (r && d.agent !== "shell") {
+      ptyWrite(id, r.briefing + "\r").catch(() => {});
+    }
+  };
 
   useEffect(() => {
     if (!termRef.current || started.current) return;
@@ -121,7 +134,29 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
           <agent.icon className="node-icon" size={13} strokeWidth={1.9} />
           {d.title ?? agent.label}
         </span>
-        <span className="node-id">{id}</span>
+        <select
+          className="role-select nodrag"
+          value={d.role ?? ""}
+          onChange={onRoleChange}
+          onMouseDown={(e) => e.stopPropagation()}
+          title="Papel do agente"
+          style={
+            role
+              ? ({
+                  color: role.color,
+                  borderColor: role.color,
+                  background: `color-mix(in srgb, ${role.color} 16%, transparent)`,
+                } as React.CSSProperties)
+              : undefined
+          }
+        >
+          {!d.role && <option value="">papel</option>}
+          {ROLES.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.label}
+            </option>
+          ))}
+        </select>
         <button
           className="node-close nodrag"
           title="Fechar terminal"

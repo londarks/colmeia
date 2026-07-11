@@ -22,6 +22,7 @@ import { DeletableEdge } from "./components/DeletableEdge";
 import { RoutinesPanel } from "./components/RoutinesPanel";
 import { TitleBar } from "./components/TitleBar";
 import { AGENTS, AGENT_LIST, type AgentId } from "./lib/agents";
+import { ROLE_MAP } from "./lib/roles";
 import { THEMES, getStoredTheme, applyTheme } from "./lib/theme";
 import { setGraph, workspaceSave, workspaceLoad } from "./lib/pty";
 import "./App.css";
@@ -110,11 +111,15 @@ export default function App() {
 
   // Espelha o grafo no backend sempre que nós/arestas mudam (escopo do roteamento).
   useEffect(() => {
-    const graphNodes = nodes.map((n) => ({
-      id: n.id,
-      type: n.type ?? "terminal",
-      title: (n.data as { title?: string }).title ?? n.id,
-    }));
+    const graphNodes = nodes.map((n) => {
+      const d = n.data as { title?: string; role?: string };
+      return {
+        id: n.id,
+        type: n.type ?? "terminal",
+        title: d.title ?? n.id,
+        role: d.role ? (ROLE_MAP[d.role]?.label ?? "") : "",
+      };
+    });
     const graphEdges = edges.map((e) => ({ source: e.source, target: e.target }));
     setGraph(graphNodes, graphEdges).catch(() => {});
   }, [nodes, edges]);

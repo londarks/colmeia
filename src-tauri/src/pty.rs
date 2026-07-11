@@ -38,6 +38,8 @@ pub struct NodeInfo {
     #[serde(rename = "type")]
     pub kind: String,
     pub title: String,
+    #[serde(default)]
+    pub role: String,
 }
 
 /// Info de uma aresta (conexão) do canvas.
@@ -120,8 +122,8 @@ impl Shared {
             .collect()
     }
 
-    /// Terminais conectados a `source` (id, título). Se `source` vazio, todos.
-    pub fn connected_terminals(&self, source: &str) -> Vec<(String, String)> {
+    /// Terminais conectados a `source` (id, título, papel). Se `source` vazio, todos.
+    pub fn connected_terminals(&self, source: &str) -> Vec<(String, String, String)> {
         let nodes = self.nodes.lock().unwrap();
         let scoped: Option<Vec<String>> = if source.is_empty() {
             None
@@ -132,7 +134,7 @@ impl Shared {
             .iter()
             .filter(|n| n.kind == "terminal")
             .filter(|n| scoped.as_ref().map_or(true, |ids| ids.contains(&n.id)))
-            .map(|n| (n.id.clone(), n.title.clone()))
+            .map(|n| (n.id.clone(), n.title.clone(), n.role.clone()))
             .collect()
     }
 

@@ -417,6 +417,35 @@
   font-family: "Cascadia Code", monospace;
 }
 
+/* Badge/seletor de papel (Master, Engenheiro, ...) */
+.role-select {
+  flex: none;
+  max-width: 110px;
+  appearance: none;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--text-muted);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  outline: none;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.role-select:hover {
+  border-color: var(--text-muted);
+}
+.role-select option {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  text-transform: none;
+  font-weight: 500;
+}
+
 /* Botão de fechar/excluir nó (terminais e notas) */
 .node-close {
   flex: none;

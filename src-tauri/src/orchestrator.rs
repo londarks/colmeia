@@ -152,8 +152,12 @@ fn route(
                 return (200, "Nenhum agente conectado a este nó.".into());
             }
             let mut lines = vec!["Agentes conectados:".to_string()];
-            for (id, title) in terminals {
-                lines.push(format!("  - \"{title}\" (id: {id})"));
+            for (id, title, role) in terminals {
+                if role.is_empty() {
+                    lines.push(format!("  - \"{title}\" (id: {id})"));
+                } else {
+                    lines.push(format!("  - \"{title}\" [{role}] (id: {id})"));
+                }
             }
             (200, lines.join("\n"))
         }
