@@ -9,7 +9,8 @@ import {
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
-import { X } from "lucide-react";
+import { X, Folder } from "lucide-react";
+import { open } from "@tauri-apps/plugin-dialog";
 import { AGENTS, type AgentId } from "../lib/agents";
 import { ROLES, ROLE_MAP } from "../lib/roles";
 import { readXtermTheme } from "../lib/theme";
@@ -35,12 +36,24 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
   const agent = AGENTS[d.agent];
   const role = d.role ? ROLE_MAP[d.role] : undefined;
   const termRef = useRef<HTMLDivElement>(null);
-  const started = useRef(false);
   const [busy, setBusy] = useState(false);
   const busyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const { deleteElements, updateNodeData } = useReactFlow();
 
   const status = d.waiting ? "waiting" : busy ? "working" : "idle";
+  const cwdName = d.cwd ? d.cwd.split(/[\\/]/).filter(Boolean).pop() : undefined;
+
+  // Abre o seletor de pasta; trocar a pasta reinicia o terminal nela.
+  const pickFolder = async () => {
+    try {
+      const dir = await open({ directory: true, defaultPath: d.cwd });
+      if (typeof dir === "string" && dir !== d.cwd) {
+        updateNodeData(id, { cwd: dir });
+      }
+    } catch {
+      /* cancelado */
+    }
+  };
 
   const onRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const roleId = e.target.value;
@@ -53,8 +66,7 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
   };
 
   useEffect(() => {
-    if (!termRef.current || started.current) return;
-    started.current = true;
+    if (!termRef.current) return;
 
     const term = new Terminal({
       fontFamily: "'Cascadia Code', Consolas, Menlo, monospace",
@@ -94,6 +106,13 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
             if (t) ptyWrite(id, t).catch(() => {});
           })
           .catch(() => {});
+        return false;
+      }
+      // Ctrl+Shift+A: seleciona tudo e copia (útil quando o zoom atrapalha o mouse).
+      if (k === "a") {
+        term.selectAll();
+        const all = term.getSelection();
+        if (all) navigator.clipboard.writeText(all).catch(() => {});
         return false;
       }
       return true;
@@ -151,7 +170,7 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
       term.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, d.cwd]);
 
   return (
     <div
@@ -183,6 +202,15 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
           <agent.icon className="node-icon" size={13} strokeWidth={1.9} />
           {d.title ?? agent.label}
         </span>
+        <button
+          className={`cwd-btn nodrag ${d.cwd ? "has-cwd" : ""}`}
+          onClick={pickFolder}
+          onMouseDown={(e) => e.stopPropagation()}
+          title={d.cwd ? `Pasta: ${d.cwd}` : "Definir pasta de trabalho"}
+        >
+          <Folder size={12} strokeWidth={2} />
+          {cwdName && <span className="cwd-name">{cwdName}</span>}
+        </button>
         <select
           className="role-select nodrag"
           value={d.role ?? ""}

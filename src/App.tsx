@@ -262,6 +262,12 @@ export default function App() {
         role = matchRole(c);
         if (role) break;
       }
+      // Herda a pasta de trabalho do recrutador (toda a força-tarefa na mesma pasta).
+      const cwd = (
+        nodesRef.current.find((n) => n.id === sourceId)?.data as {
+          cwd?: string;
+        }
+      )?.cwd;
       counter += 1;
       const id = `${agentId}-${counter}`;
       const offset = (counter % 5) * 42;
@@ -274,7 +280,7 @@ export default function App() {
           id,
           type: "terminal",
           position: { x: 160 + offset, y: 130 + offset },
-          data: { agent: agentId, title, role: role?.id },
+          data: { agent: agentId, title, role: role?.id, cwd },
           style: { width: 500, height: 340 },
         });
       });
