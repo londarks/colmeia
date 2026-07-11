@@ -452,6 +452,55 @@
   font-size: 13px;
   background: var(--bg-editor);
 }
+
+/* ========================= Drawing node ========================= */
+.drawing-node {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-editor);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.drawing-node.is-selected {
+  border-color: var(--agent);
+  box-shadow: 0 0 0 1px var(--agent), 0 14px 40px rgba(0, 0, 0, 0.55);
+}
+.drawing-header {
+  background: color-mix(in srgb, var(--agent) 14%, var(--bg-sidebar));
+}
+.draw-colors {
+  flex: 1;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.draw-color {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.draw-color.on {
+  border-color: var(--text-primary);
+}
+.drawing-body {
+  flex: 1;
+  min-height: 0;
+  background: var(--bg-tooltip);
+}
+.drawing-body svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+}
 .term-node.is-selected {
   border-color: var(--agent);
   box-shadow: 0 0 0 1px var(--agent), 0 14px 40px rgba(0, 0, 0, 0.55);

@@ -14,11 +14,12 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import { listen } from "@tauri-apps/api/event";
-import { StickyNote, Timer, Layers, Eye, Globe } from "lucide-react";
+import { StickyNote, Timer, Layers, Eye, Globe, Pencil } from "lucide-react";
 import logoUrl from "./assets/logo.png";
 import { TerminalNode } from "./nodes/TerminalNode";
 import { NoteNode } from "./nodes/NoteNode";
 import { BrowserNode } from "./nodes/BrowserNode";
+import { DrawingNode } from "./nodes/DrawingNode";
 import { DeletableEdge } from "./components/DeletableEdge";
 import { RoutinesPanel } from "./components/RoutinesPanel";
 import { ApprovalsPanel } from "./components/ApprovalsPanel";
@@ -47,7 +48,12 @@ export default function App() {
   const [showOmbro, setShowOmbro] = useState(false);
   const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
   const nodeTypes = useMemo<NodeTypes>(
-    () => ({ terminal: TerminalNode, note: NoteNode, browser: BrowserNode }),
+    () => ({
+      terminal: TerminalNode,
+      note: NoteNode,
+      browser: BrowserNode,
+      drawing: DrawingNode,
+    }),
     [],
   );
   const edgeTypes = useMemo(() => ({ default: DeletableEdge }), []);
@@ -210,6 +216,21 @@ export default function App() {
     },
     [setNodes],
   );
+
+  const addDrawingNode = useCallback(() => {
+    counter += 1;
+    const id = `drawing-${counter}`;
+    const offset = (counter % 5) * 42;
+    setNodes((nds) =>
+      nds.concat({
+        id,
+        type: "drawing",
+        position: { x: 200 + offset, y: 200 + offset },
+        data: { strokes: [] },
+        style: { width: 320, height: 260 },
+      }),
+    );
+  }, [setNodes]);
 
   // Abre/atualiza um browser conectado ao agente (via `colmeia browse`).
   const onBrowse = useCallback(
@@ -448,7 +469,9 @@ export default function App() {
         ? "#f59e0b"
         : n.type === "browser"
           ? "#38bdf8"
-          : AGENTS[(n.data as { agent: AgentId }).agent]?.color ?? "#666",
+          : n.type === "drawing"
+            ? "#94a3b8"
+            : AGENTS[(n.data as { agent: AgentId }).agent]?.color ?? "#666",
     [],
   );
 
@@ -512,6 +535,16 @@ export default function App() {
               <span className="side-dot" />
               <Globe className="side-icon" size={16} strokeWidth={1.75} />
               <span className="side-btn-label">Browser</span>
+            </button>
+            <button
+              className="side-btn"
+              style={{ ["--c" as string]: "#94a3b8" } as React.CSSProperties}
+              onClick={addDrawingNode}
+              title="Adicionar desenho"
+            >
+              <span className="side-dot" />
+              <Pencil className="side-icon" size={16} strokeWidth={1.75} />
+              <span className="side-btn-label">Desenho</span>
             </button>
           </div>
         </div>
