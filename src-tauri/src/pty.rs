@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -40,6 +41,8 @@ pub struct NodeInfo {
     pub title: String,
     #[serde(default)]
     pub role: String,
+    #[serde(default, rename = "roleBriefing")]
+    pub role_briefing: String,
 }
 
 /// Info de uma aresta (conexão) do canvas.
@@ -81,6 +84,8 @@ pub struct Shared {
     nodes: Mutex<Vec<NodeInfo>>,
     edges: Mutex<Vec<EdgeInfo>>,
     routines: Mutex<HashMap<String, RoutineHandle>>,
+    /// Aprovações pendentes: id -> canal para entregar a decisão (true=permitir).
+    pending_approvals: Mutex<HashMap<String, Sender<bool>>>,
     /// Token exigido em toda chamada ao servidor loopback.
     pub token: String,
     /// Porta do servidor loopback (definida no start).
@@ -99,9 +104,31 @@ impl Shared {
             nodes: Mutex::new(Vec::new()),
             edges: Mutex::new(Vec::new()),
             routines: Mutex::new(HashMap::new()),
+            pending_approvals: Mutex::new(HashMap::new()),
             token,
             port: Mutex::new(0),
         }
+    }
+
+    /// Registra uma aprovação pendente (o `/approve` bloqueia até a decisão).
+    pub fn add_pending(&self, id: String, tx: Sender<bool>) {
+        self.pending_approvals.lock().unwrap().insert(id, tx);
+    }
+
+    /// Retira o canal de uma aprovação (idempotente).
+    pub fn take_pending(&self, id: &str) -> Option<Sender<bool>> {
+        self.pending_approvals.lock().unwrap().remove(id)
+    }
+
+    /// Título de um nó pelo id (para exibir no painel de aprovações).
+    pub fn title_of(&self, id: &str) -> String {
+        self.nodes
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|n| n.id == id)
+            .map(|n| n.title.clone())
+            .unwrap_or_else(|| id.to_string())
     }
 
     /// Ids conectados a `source` por qualquer aresta.
@@ -148,6 +175,17 @@ impl Shared {
             .map(|n| n.id.clone())
     }
 
+    /// Briefing do papel de um nó (vazio se sem papel).
+    pub fn role_briefing_of(&self, id: &str) -> String {
+        self.nodes
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|n| n.id == id)
+            .map(|n| n.role_briefing.clone())
+            .unwrap_or_default()
+    }
+
     /// Resolve um terminal por id OU título; devolve (id, título).
     pub fn resolve_terminal(&self, target: &str) -> Option<(String, String)> {
         self.nodes
@@ -179,6 +217,21 @@ impl Shared {
         } else {
             false
         }
+    }
+
+    /// Envia `data` e, logo depois, um Enter SEPARADO. TUIs (ex.: Claude Code)
+    /// tratam texto+Enter juntos como "paste" e não submetem; o Enter isolado
+    /// (após um pequeno atraso) é reconhecido como tecla e dispara o envio.
+    pub fn submit_line(self: &Arc<Self>, id: String, data: String) -> bool {
+        if !self.write_to(&id, &data) {
+            return false;
+        }
+        let shared = Arc::clone(self);
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(70));
+            shared.write_to(&id, "\r");
+        });
+        true
     }
 
     /// Cria uma rotina: roda `command` no terminal `target_id` a cada `interval` segundos.
@@ -216,7 +269,7 @@ impl Shared {
             if stop_thread.load(Ordering::Relaxed) {
                 return;
             }
-            shared.write_to(&tid, &(cmd.clone() + "\r"));
+            shared.submit_line(tid.clone(), cmd.clone());
         });
 
         let _ = target_id;
@@ -295,7 +348,29 @@ fn ensure_cli_scripts() -> std::io::Result<PathBuf> {
         let _ = std::fs::set_permissions(&sh_path, std::fs::Permissions::from_mode(0o755));
     }
 
+    // Hook PreToolUse do Claude Code: pausa o agente e pede aprovação ao painel.
+    let approve = bin.join("colmeia-approve.js");
+    std::fs::write(&approve, include_str!("cli/colmeia-approve.js"))?;
+    let approve_cmd = format!("node \"{}\"", approve.display());
+    let hooks = serde_json::json!({
+        "hooks": {
+            "PreToolUse": [{
+                "matcher": "Bash|Write|Edit|MultiEdit|NotebookEdit",
+                "hooks": [{ "type": "command", "command": approve_cmd, "timeout": 600 }]
+            }]
+        }
+    });
+    std::fs::write(
+        bin.join("colmeia-hooks.json"),
+        serde_json::to_string_pretty(&hooks).unwrap_or_default(),
+    )?;
+
     Ok(bin)
+}
+
+/// Caminho do arquivo de settings (hooks) do Claude, dentro do bin.
+fn claude_settings_path() -> PathBuf {
+    cli_bin_dir().join("colmeia-hooks.json")
 }
 
 /// Cria uma nova sessão de PTY e começa a transmitir a saída pelo `channel`.
@@ -329,6 +404,12 @@ pub fn pty_spawn(
     let sep = if cfg!(windows) { ";" } else { ":" };
     let mut cmd = CommandBuilder::new(&command);
     cmd.args(&args);
+    // Para o Claude Code, injeta o hook de aprovação via --settings (caminho do
+    // arquivo direto — esta versão do CLI não usa o prefixo "@").
+    if command.eq_ignore_ascii_case("claude") && bin_dir.is_some() {
+        cmd.arg("--settings");
+        cmd.arg(claude_settings_path().to_string_lossy().to_string());
+    }
     for (k, v) in std::env::vars() {
         if k.eq_ignore_ascii_case("path") {
             if let Some(ref bin) = bin_dir {
@@ -417,6 +498,16 @@ pub fn pty_write(state: State<'_, PtyState>, id: String, data: String) -> Result
     }
 }
 
+/// Envia uma linha + Enter separado (para TUIs). Usado pelo briefing de papel.
+#[tauri::command]
+pub fn pty_submit(state: State<'_, PtyState>, id: String, data: String) -> Result<(), String> {
+    if state.0.submit_line(id.clone(), data) {
+        Ok(())
+    } else {
+        Err(format!("sessão '{id}' não encontrada"))
+    }
+}
+
 /// Redimensiona o PTY (quando o nó do canvas muda de tamanho).
 #[tauri::command]
 pub fn pty_resize(
@@ -484,4 +575,12 @@ pub fn routine_create(
 pub fn routine_delete(state: State<'_, PtyState>, id: String) -> Vec<RoutineInfo> {
     state.0.delete_routine(&id);
     state.0.list_routines()
+}
+
+/// Responde a uma aprovação pendente (true = permitir, false = recusar).
+#[tauri::command]
+pub fn approval_resolve(state: State<'_, PtyState>, id: String, allow: bool) {
+    if let Some(tx) = state.0.take_pending(&id) {
+        let _ = tx.send(allow);
+    }
 }

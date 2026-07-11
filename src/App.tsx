@@ -20,11 +20,17 @@ import { TerminalNode } from "./nodes/TerminalNode";
 import { NoteNode } from "./nodes/NoteNode";
 import { DeletableEdge } from "./components/DeletableEdge";
 import { RoutinesPanel } from "./components/RoutinesPanel";
+import { ApprovalsPanel } from "./components/ApprovalsPanel";
 import { TitleBar } from "./components/TitleBar";
 import { AGENTS, AGENT_LIST, type AgentId } from "./lib/agents";
 import { ROLE_MAP } from "./lib/roles";
 import { THEMES, getStoredTheme, applyTheme } from "./lib/theme";
-import { setGraph, workspaceSave, workspaceLoad } from "./lib/pty";
+import {
+  setGraph,
+  workspaceSave,
+  workspaceLoad,
+  type ApprovalRequest,
+} from "./lib/pty";
 import "./App.css";
 
 let counter = 0;
@@ -34,6 +40,7 @@ export default function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [theme, setTheme] = useState<string>(getStoredTheme());
   const [showRoutines, setShowRoutines] = useState(false);
+  const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
   const nodeTypes = useMemo<NodeTypes>(
     () => ({ terminal: TerminalNode, note: NoteNode }),
     [],
@@ -118,6 +125,7 @@ export default function App() {
         type: n.type ?? "terminal",
         title: d.title ?? n.id,
         role: d.role ? (ROLE_MAP[d.role]?.label ?? "") : "",
+        roleBriefing: d.role ? (ROLE_MAP[d.role]?.briefing ?? "") : "",
       };
     });
     const graphEdges = edges.map((e) => ({ source: e.source, target: e.target }));
@@ -237,6 +245,12 @@ export default function App() {
       listen<{ source: string; target: string }>("colmeia://interaction", (e) =>
         highlightEdge(e.payload.source, e.payload.target),
       ),
+      listen<ApprovalRequest>("colmeia://approval-request", (e) =>
+        setApprovals((prev) => [...prev, e.payload]),
+      ),
+      listen<{ id: string }>("colmeia://approval-resolved", (e) =>
+        setApprovals((prev) => prev.filter((a) => a.id !== e.payload.id)),
+      ),
     ];
     return () => {
       subs.forEach((p) => p.then((un) => un()));
@@ -336,6 +350,7 @@ export default function App() {
           deleteKeyCode={["Delete"]}
           connectionRadius={48}
           fitView
+          fitViewOptions={{ minZoom: 1, maxZoom: 1 }}
           minZoom={0.2}
           maxZoom={2}
           proOptions={{ hideAttribution: true }}
@@ -368,6 +383,13 @@ export default function App() {
             onClose={() => setShowRoutines(false)}
           />
         )}
+
+        <ApprovalsPanel
+          approvals={approvals}
+          onResolved={(id) =>
+            setApprovals((prev) => prev.filter((a) => a.id !== id))
+          }
+        />
 
         {nodes.length === 0 && (
           <div className="empty">

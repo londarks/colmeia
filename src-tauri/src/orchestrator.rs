@@ -3,8 +3,12 @@
 // da sessão (bloqueia páginas web maliciosas), e NÃO expõe CORS.
 
 use std::collections::HashMap;
+use std::sync::mpsc;
 use std::sync::Arc;
+use std::time::Duration;
 
+use rand::distributions::Alphanumeric;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 use tiny_http::{Method, Request, Response, Server};
@@ -23,9 +27,12 @@ pub fn start(shared: Arc<Shared>, app: AppHandle) -> u16 {
     let port = server.server_addr().to_ip().map(|a| a.port()).unwrap_or(0);
     *shared.port.lock().unwrap() = port;
 
+    // Uma thread por requisição: uma aprovação bloqueada não trava as demais.
     std::thread::spawn(move || {
         for request in server.incoming_requests() {
-            handle(&shared, &app, request);
+            let shared = Arc::clone(&shared);
+            let app = app.clone();
+            std::thread::spawn(move || handle(&shared, &app, request));
         }
     });
 
@@ -96,6 +103,27 @@ struct ConnectPayload {
 struct InteractionPayload {
     source: String,
     target: String,
+}
+
+#[derive(Deserialize)]
+struct ApproveBody {
+    #[serde(default)]
+    tool: String,
+    #[serde(default)]
+    summary: String,
+}
+/// Uma solicitação de aprovação pendente, enviada ao painel central.
+#[derive(Clone, Serialize)]
+struct ApprovalRequest {
+    id: String,
+    node: String,
+    title: String,
+    tool: String,
+    summary: String,
+}
+#[derive(Clone, Serialize)]
+struct ApprovalResolved {
+    id: String,
 }
 
 /// Avisa o frontend que `source` interagiu com `target` (acende a aresta).
@@ -180,7 +208,14 @@ fn route(
         (Method::Post, "/ask") => match serde_json::from_str::<AskBody>(body) {
             Ok(b) => match shared.find_terminal_by_title(&b.agent) {
                 Some(id) => {
-                    if shared.write_to(&id, &(b.prompt.clone() + "\r")) {
+                    // Re-injeta o papel do agente a cada delegação (fica sempre firme).
+                    let briefing = shared.role_briefing_of(&id);
+                    let msg = if briefing.is_empty() {
+                        b.prompt.clone()
+                    } else {
+                        format!("{briefing}\n\nAgora execute: {}", b.prompt)
+                    };
+                    if shared.submit_line(id.clone(), msg) {
                         emit_interaction(app, source, &id);
                         (200, format!("Prompt enviado para \"{}\".", b.agent))
                     } else {
@@ -265,6 +300,57 @@ fn route(
             },
             Err(_) => (400, "Corpo inválido para /routine.".into()),
         },
+        // Hook de aprovação: bloqueia até o humano decidir no painel central.
+        (Method::Post, "/approve") => {
+            let b: ApproveBody = serde_json::from_str(body).unwrap_or(ApproveBody {
+                tool: String::new(),
+                summary: String::new(),
+            });
+            let approval_id: String = format!(
+                "apv-{}",
+                rand::thread_rng()
+                    .sample_iter(&Alphanumeric)
+                    .take(8)
+                    .map(char::from)
+                    .collect::<String>()
+            );
+            let (tx, rx) = mpsc::channel::<bool>();
+            shared.add_pending(approval_id.clone(), tx);
+            let title = shared.title_of(source);
+            let _ = app.emit(
+                "colmeia://approval-request",
+                ApprovalRequest {
+                    id: approval_id.clone(),
+                    node: source.to_string(),
+                    title,
+                    tool: b.tool.clone(),
+                    summary: b.summary.clone(),
+                },
+            );
+
+            let outcome = rx.recv_timeout(Duration::from_secs(540));
+            shared.take_pending(&approval_id);
+            let _ = app.emit(
+                "colmeia://approval-resolved",
+                ApprovalResolved { id: approval_id },
+            );
+
+            let json = match outcome {
+                Ok(false) => serde_json::json!({"hookSpecificOutput":{
+                    "hookEventName":"PreToolUse",
+                    "permissionDecision":"deny",
+                    "permissionDecisionReason":"Recusado no painel do colmeia"
+                }}),
+                Ok(true) => serde_json::json!({"hookSpecificOutput":{
+                    "hookEventName":"PreToolUse","permissionDecision":"allow"
+                }}),
+                // Timeout: cai no fluxo normal (prompt no terminal do agente).
+                Err(_) => serde_json::json!({"hookSpecificOutput":{
+                    "hookEventName":"PreToolUse","permissionDecision":"ask"
+                }}),
+            };
+            (200, json.to_string())
+        }
         _ => (404, "Rota não encontrada.".into()),
     }
 }

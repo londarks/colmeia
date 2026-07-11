@@ -20,12 +20,14 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             pty::pty_spawn,
             pty::pty_write,
+            pty::pty_submit,
             pty::pty_resize,
             pty::pty_kill,
             pty::set_graph,
             pty::routines_list,
             pty::routine_create,
             pty::routine_delete,
+            pty::approval_resolve,
             workspace::workspace_save,
             workspace::workspace_load,
         ])

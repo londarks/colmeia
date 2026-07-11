@@ -37,6 +37,11 @@ export function ptyWrite(id: string, data: string): Promise<void> {
   return invoke("pty_write", { id, data });
 }
 
+/** Envia uma linha + Enter separado (correto para TUIs como Claude Code). */
+export function ptySubmit(id: string, data: string): Promise<void> {
+  return invoke("pty_submit", { id, data });
+}
+
 export function ptyResize(id: string, cols: number, rows: number): Promise<void> {
   return invoke("pty_resize", { id, cols, rows });
 }
@@ -50,6 +55,7 @@ export interface GraphNode {
   type: string;
   title: string;
   role?: string;
+  roleBriefing?: string;
 }
 export interface GraphEdge {
   source: string;
@@ -80,6 +86,19 @@ export function routineCreate(
 }
 export function routineDelete(id: string): Promise<RoutineInfo[]> {
   return invoke("routine_delete", { id });
+}
+
+export interface ApprovalRequest {
+  id: string;
+  node: string;
+  title: string;
+  tool: string;
+  summary: string;
+}
+
+/** Responde a uma aprovação pendente (true = permitir, false = recusar). */
+export function approvalResolve(id: string, allow: boolean): Promise<void> {
+  return invoke("approval_resolve", { id, allow });
 }
 
 export interface WorkspaceData {

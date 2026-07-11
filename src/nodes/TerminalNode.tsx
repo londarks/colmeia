@@ -13,7 +13,14 @@ import { X } from "lucide-react";
 import { AGENTS, type AgentId } from "../lib/agents";
 import { ROLES, ROLE_MAP } from "../lib/roles";
 import { readXtermTheme } from "../lib/theme";
-import { ptySpawn, ptyWrite, ptyResize, ptyKill, b64ToBytes } from "../lib/pty";
+import {
+  ptySpawn,
+  ptyWrite,
+  ptySubmit,
+  ptyResize,
+  ptyKill,
+  b64ToBytes,
+} from "../lib/pty";
 
 export interface TerminalNodeData {
   agent: AgentId;
@@ -36,7 +43,7 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
     const r = roleId ? ROLE_MAP[roleId] : undefined;
     // Briefa o agente com o papel (não faz sentido num shell puro).
     if (r && d.agent !== "shell") {
-      ptyWrite(id, r.briefing + "\r").catch(() => {});
+      ptySubmit(id, r.briefing).catch(() => {});
     }
   };
 
@@ -62,6 +69,30 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
     } catch {
       /* ignora fit antes do layout */
     }
+
+    // Copiar (Ctrl+Shift+C) e colar (Ctrl+Shift+V) — o Ctrl+C continua sendo
+    // interrupção (SIGINT), como num terminal de verdade.
+    term.attachCustomKeyEventHandler((e) => {
+      if (e.type !== "keydown" || !e.ctrlKey || !e.shiftKey) return true;
+      const k = e.key.toLowerCase();
+      if (k === "c") {
+        const sel = term.getSelection();
+        if (sel) {
+          navigator.clipboard.writeText(sel).catch(() => {});
+          return false;
+        }
+      }
+      if (k === "v") {
+        navigator.clipboard
+          .readText()
+          .then((t) => {
+            if (t) ptyWrite(id, t).catch(() => {});
+          })
+          .catch(() => {});
+        return false;
+      }
+      return true;
+    });
 
     const { command, args } = agent.resolve();
     let exited = false;
