@@ -46,8 +46,10 @@ process.stdin.on("end", () => {
     /* input inválido */
   }
 
-  // Ferramentas não-sensíveis (Read/Grep/Glob/...) seguem o fluxo normal.
-  if (!SENSITIVE.has(tool)) emit(ASK);
+  // Ferramentas não-sensíveis (Read/Grep/Glob/...) são liberadas automaticamente
+  // — sem atrito e sem cair no prompt do terminal. Só as sensíveis (executar
+  // comando / alterar arquivos) passam pela aprovação central.
+  if (!SENSITIVE.has(tool)) emit(ALLOW);
 
   const payload = JSON.stringify({ tool, summary: String(summary) });
   const path =
