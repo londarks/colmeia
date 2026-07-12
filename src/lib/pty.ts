@@ -115,14 +115,37 @@ export interface WorkspaceData {
   nodes: unknown[];
   edges: unknown[];
   strokes?: unknown[];
-  texts?: unknown[];
+}
+export interface WorkspaceMeta {
+  id: string;
+  name: string;
+}
+export interface WorkspaceIndex {
+  active: string;
+  items: WorkspaceMeta[];
 }
 
-export function workspaceSave(data: WorkspaceData): Promise<void> {
-  return invoke("workspace_save", { data });
+/** Lista os canvases + qual está ativo. */
+export function workspacesList(): Promise<WorkspaceIndex> {
+  return invoke("workspaces_list");
 }
-export function workspaceLoad(): Promise<WorkspaceData | null> {
-  return invoke("workspace_load");
+export function workspaceSave(id: string, data: WorkspaceData): Promise<void> {
+  return invoke("workspace_save", { id, data });
+}
+export function workspaceLoad(id: string): Promise<WorkspaceData> {
+  return invoke("workspace_load", { id });
+}
+export function workspaceCreate(name: string): Promise<WorkspaceIndex> {
+  return invoke("workspace_create", { name });
+}
+export function workspaceRename(id: string, name: string): Promise<WorkspaceIndex> {
+  return invoke("workspace_rename", { id, name });
+}
+export function workspaceDelete(id: string): Promise<WorkspaceIndex> {
+  return invoke("workspace_delete", { id });
+}
+export function workspaceSetActive(id: string): Promise<void> {
+  return invoke("workspace_set_active", { id });
 }
 
 /** Pede ao Ombro (Ollama local) uma análise dos agentes + próximo passo. */

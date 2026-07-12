@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-} from "react";
+import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { ViewportPortal, useReactFlow } from "@xyflow/react";
 
 export interface Point {
@@ -16,23 +10,13 @@ export interface Stroke {
   color: string;
   width: number;
 }
-export interface TextItem {
-  id: string;
-  x: number;
-  y: number;
-  text: string;
-  color: string;
-}
-export type DrawTool = "select" | "draw" | "erase" | "text";
+export type DrawTool = "select" | "draw" | "erase";
 
 interface Props {
   tool: DrawTool;
-  setTool: (t: DrawTool) => void;
   color: string;
   strokes: Stroke[];
   setStrokes: Dispatch<SetStateAction<Stroke[]>>;
-  texts: TextItem[];
-  setTexts: Dispatch<SetStateAction<TextItem[]>>;
 }
 
 function toPath(pts: Point[]): string {
@@ -40,39 +24,12 @@ function toPath(pts: Point[]): string {
   return "M " + pts.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" L ");
 }
 
-// Camada de desenho livre + texto em coordenadas do canvas (acompanha pan/zoom).
-export function DrawLayer({
-  tool,
-  setTool,
-  color,
-  strokes,
-  setStrokes,
-  texts,
-  setTexts,
-}: Props) {
+// Camada de desenho livre em coordenadas do canvas (acompanha pan/zoom).
+export function DrawLayer({ tool, color, strokes, setStrokes }: Props) {
   const { screenToFlowPosition } = useReactFlow();
   const [cur, setCur] = useState<Point[]>([]);
-  const [editing, setEditing] = useState<string | null>(null);
   const drawing = useRef(false);
-  const editRef = useRef<HTMLDivElement | null>(null);
-
-  // Foca o texto recém-criado (após o commit do DOM e o fim do clique).
-  useEffect(() => {
-    if (!editing) return;
-    const raf = requestAnimationFrame(() => {
-      const el = editRef.current;
-      if (!el) return;
-      el.focus();
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      range.collapse(false);
-      const sel = window.getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(range);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [editing]);
-  const active = tool === "draw" || tool === "erase" || tool === "text";
+  const active = tool === "draw" || tool === "erase";
 
   const flowPt = (e: React.PointerEvent): Point =>
     screenToFlowPosition({ x: e.clientX, y: e.clientY });
@@ -85,13 +42,6 @@ export function DrawLayer({
 
   const down = (e: React.PointerEvent) => {
     const p = flowPt(e);
-    if (tool === "text") {
-      const id = `text-${Date.now()}`;
-      setTexts((t) => [...t, { id, x: p.x, y: p.y, text: "", color }]);
-      setEditing(id);
-      setTool("select");
-      return;
-    }
     drawing.current = true;
     (e.target as Element).setPointerCapture(e.pointerId);
     if (tool === "draw") setCur([p]);
@@ -112,12 +62,6 @@ export function DrawLayer({
         return [];
       });
     }
-  };
-
-  const commitText = (id: string, value: string) => {
-    if (!value.trim()) setTexts((t) => t.filter((x) => x.id !== id));
-    else setTexts((t) => t.map((x) => (x.id === id ? { ...x, text: value } : x)));
-    setEditing((cur) => (cur === id ? null : cur));
   };
 
   return (
@@ -157,27 +101,6 @@ export function DrawLayer({
             />
           )}
         </svg>
-
-        {texts.map((t) => (
-          <div
-            key={t.id}
-            className="canvas-text nodrag nowheel"
-            contentEditable
-            suppressContentEditableWarning
-            ref={editing === t.id ? editRef : undefined}
-            onClick={() => setEditing(t.id)}
-            style={{
-              position: "absolute",
-              left: t.x,
-              top: t.y,
-              color: t.color,
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-            onBlur={(e) => commitText(t.id, e.currentTarget.textContent ?? "")}
-          >
-            {t.text}
-          </div>
-        ))}
       </ViewportPortal>
 
       {active && (
@@ -186,7 +109,7 @@ export function DrawLayer({
           onPointerDown={down}
           onPointerMove={move}
           onPointerUp={up}
-          style={{ cursor: tool === "text" ? "text" : tool === "erase" ? "cell" : "crosshair" }}
+          style={{ cursor: tool === "erase" ? "cell" : "crosshair" }}
         />
       )}
     </>

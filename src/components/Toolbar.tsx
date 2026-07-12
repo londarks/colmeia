@@ -25,6 +25,7 @@ interface Props {
   onClear: () => void;
   onAddAgent: (a: AgentId) => void;
   onAddNote: () => void;
+  onAddText: () => void;
   onAddBrowser: () => void;
   showRoutines: boolean;
   setShowRoutines: (f: (v: boolean) => boolean) => void;
@@ -42,6 +43,7 @@ export function Toolbar({
   onClear,
   onAddAgent,
   onAddNote,
+  onAddText,
   onAddBrowser,
   showRoutines,
   setShowRoutines,
@@ -97,11 +99,7 @@ export function Toolbar({
         <button className="tool-item" title="Adicionar nota" onClick={onAddNote}>
           <StickyNote size={17} strokeWidth={1.9} />
         </button>
-        <button
-          className={`tool-item ${tool === "text" ? "on" : ""}`}
-          title="Texto no canvas"
-          onClick={() => setTool("text")}
-        >
+        <button className="tool-item" title="Texto no canvas" onClick={onAddText}>
           <Type size={17} strokeWidth={1.9} />
         </button>
         <button className="tool-item" title="Adicionar navegador" onClick={onAddBrowser}>

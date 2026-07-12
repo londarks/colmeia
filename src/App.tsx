@@ -14,18 +14,14 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import { listen } from "@tauri-apps/api/event";
-import { PanelLeftClose, PanelLeft } from "lucide-react";
+import { PanelLeftClose, PanelLeft, Plus, X, Search } from "lucide-react";
 import logoUrl from "./assets/logo.png";
 import { TerminalNode } from "./nodes/TerminalNode";
 import { NoteNode } from "./nodes/NoteNode";
 import { BrowserNode } from "./nodes/BrowserNode";
+import { TextNode } from "./nodes/TextNode";
 import { DeletableEdge } from "./components/DeletableEdge";
-import {
-  DrawLayer,
-  type DrawTool,
-  type Stroke,
-  type TextItem,
-} from "./components/DrawLayer";
+import { DrawLayer, type DrawTool, type Stroke } from "./components/DrawLayer";
 import { Toolbar } from "./components/Toolbar";
 import { RoutinesPanel } from "./components/RoutinesPanel";
 import { ApprovalsPanel } from "./components/ApprovalsPanel";
@@ -37,9 +33,16 @@ import { ROLES, ROLE_MAP, type Role } from "./lib/roles";
 import { THEMES, getStoredTheme, applyTheme } from "./lib/theme";
 import {
   setGraph,
+  workspacesList,
   workspaceSave,
   workspaceLoad,
+  workspaceCreate,
+  workspaceRename,
+  workspaceDelete,
+  workspaceSetActive,
   type ApprovalRequest,
+  type WorkspaceMeta,
+  type WorkspaceData,
 } from "./lib/pty";
 import "./App.css";
 
@@ -54,15 +57,19 @@ export default function App() {
   const [showOmbro, setShowOmbro] = useState(false);
   const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [canvases, setCanvases] = useState<WorkspaceMeta[]>([]);
+  const [activeCanvas, setActiveCanvas] = useState<string>("");
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [canvasQuery, setCanvasQuery] = useState("");
   const [tool, setTool] = useState<DrawTool>("select");
   const [drawColor, setDrawColor] = useState("#e6e9ef");
   const [strokes, setStrokes] = useState<Stroke[]>([]);
-  const [texts, setTexts] = useState<TextItem[]>([]);
   const nodeTypes = useMemo<NodeTypes>(
     () => ({
       terminal: TerminalNode,
       note: NoteNode,
       browser: BrowserNode,
+      text: TextNode,
     }),
     [],
   );
@@ -82,8 +89,8 @@ export default function App() {
   edgesRef.current = edges;
   const strokesRef = useRef(strokes);
   strokesRef.current = strokes;
-  const textsRef = useRef(texts);
-  textsRef.current = texts;
+  const activeRef = useRef(activeCanvas);
+  activeRef.current = activeCanvas;
 
   // Persistência: só salva depois do carregamento inicial (evita salvar vazio).
   const readyRef = useRef(false);
@@ -105,25 +112,31 @@ export default function App() {
       data: e.data,
     })),
     strokes: strokesRef.current,
-    texts: textsRef.current,
   });
 
-  // Carrega o workspace salvo ao iniciar.
+  // Aplica os dados de um canvas no estado do React Flow.
+  const applyCanvas = (ws: WorkspaceData) => {
+    const list = (ws.nodes as Node[]) ?? [];
+    setNodes(list);
+    setEdges((ws.edges as Edge[]) ?? []);
+    setStrokes((ws.strokes as Stroke[]) ?? []);
+    // Evita colisão de ids ao criar novos nós (mantém o contador monotônico).
+    const maxN = list.reduce((m, n) => {
+      const num = parseInt(String(n.id).split("-").pop() ?? "0", 10);
+      return Number.isFinite(num) ? Math.max(m, num) : m;
+    }, 0);
+    counter = Math.max(counter, maxN);
+  };
+
+  // Carrega o índice de canvases + o canvas ativo ao iniciar.
   useEffect(() => {
-    workspaceLoad()
-      .then((ws) => {
-        if (ws && Array.isArray(ws.nodes)) {
-          setNodes(ws.nodes as Node[]);
-          setEdges((ws.edges as Edge[]) ?? []);
-          setStrokes(((ws as { strokes?: Stroke[] }).strokes as Stroke[]) ?? []);
-          setTexts(((ws as { texts?: TextItem[] }).texts as TextItem[]) ?? []);
-          // Evita colisão de ids ao criar novos nós.
-          const maxN = (ws.nodes as Node[]).reduce((m, n) => {
-            const num = parseInt(String(n.id).split("-").pop() ?? "0", 10);
-            return Number.isFinite(num) ? Math.max(m, num) : m;
-          }, 0);
-          counter = Math.max(counter, maxN);
-        }
+    workspacesList()
+      .then(async (idx) => {
+        setCanvases(idx.items);
+        const active = idx.active || idx.items[0]?.id || "";
+        activeRef.current = active;
+        setActiveCanvas(active);
+        if (active) applyCanvas(await workspaceLoad(active));
       })
       .catch(() => {})
       .finally(() => {
@@ -132,15 +145,67 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-salva (debounced) a cada mudança, depois do carregamento inicial.
+  // Auto-salva (debounced) o canvas ativo a cada mudança.
   useEffect(() => {
-    if (!readyRef.current) return;
+    if (!readyRef.current || !activeRef.current) return;
     window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
-      workspaceSave(buildWorkspace()).catch(() => {});
+      workspaceSave(activeRef.current, buildWorkspace()).catch(() => {});
     }, 800);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, edges, strokes, texts]);
+  }, [nodes, edges, strokes]);
+
+  // Salva o canvas atual antes de sair dele (usado ao trocar/criar).
+  const flushActive = async () => {
+    window.clearTimeout(saveTimer.current);
+    if (activeRef.current) {
+      try {
+        await workspaceSave(activeRef.current, buildWorkspace());
+      } catch {
+        /* ignora */
+      }
+    }
+  };
+
+  const switchCanvas = async (id: string) => {
+    if (id === activeRef.current) return;
+    await flushActive();
+    let ws: WorkspaceData;
+    try {
+      ws = await workspaceLoad(id);
+    } catch {
+      return;
+    }
+    activeRef.current = id;
+    setActiveCanvas(id);
+    applyCanvas(ws);
+    workspaceSetActive(id).catch(() => {});
+  };
+
+  const newCanvas = async () => {
+    await flushActive();
+    const idx = await workspaceCreate("");
+    setCanvases(idx.items);
+    activeRef.current = idx.active;
+    setActiveCanvas(idx.active);
+    applyCanvas({ nodes: [], edges: [], strokes: [] });
+  };
+
+  const removeCanvas = async (id: string) => {
+    const idx = await workspaceDelete(id);
+    setCanvases(idx.items);
+    if (activeRef.current === id && !idx.items.some((c) => c.id === id)) {
+      activeRef.current = idx.active;
+      setActiveCanvas(idx.active);
+      applyCanvas(await workspaceLoad(idx.active));
+    }
+  };
+
+  const commitRename = async (id: string, name: string) => {
+    setRenaming(null);
+    const idx = await workspaceRename(id, name);
+    setCanvases(idx.items);
+  };
 
   useEffect(() => {
     applyTheme(theme);
@@ -216,6 +281,21 @@ export default function App() {
     },
     [setNodes],
   );
+
+  const addTextNode = useCallback(() => {
+    counter += 1;
+    const id = `text-${counter}`;
+    const offset = (counter % 5) * 42;
+    setNodes((nds) =>
+      nds.concat({
+        id,
+        type: "text",
+        position: { x: 240 + offset, y: 200 + offset },
+        data: { text: "", color: "#e6e9ef", fontSize: 22 },
+        style: { width: 220, height: 60 },
+      }),
+    );
+  }, [setNodes]);
 
   const addBrowserNode = useCallback(
     (url?: string) => {
@@ -538,6 +618,26 @@ export default function App() {
         {sidebarOpen && (
         <aside className="sidebar">
           <div className="side-topbar">
+            <div className="side-search">
+              <Search size={14} strokeWidth={1.9} />
+              <input
+                value={canvasQuery}
+                onChange={(e) => setCanvasQuery(e.target.value)}
+                placeholder="Buscar canvas…"
+              />
+              {canvasQuery && (
+                <button
+                  className="side-search-clear"
+                  onClick={() => setCanvasQuery("")}
+                  title="Limpar"
+                >
+                  <X size={12} strokeWidth={2.2} />
+                </button>
+              )}
+            </div>
+            <button className="side-new" onClick={newCanvas} title="Novo canvas">
+              <Plus size={17} strokeWidth={2.2} />
+            </button>
             <button
               className="side-collapse"
               onClick={() => setSidebarOpen(false)}
@@ -546,6 +646,62 @@ export default function App() {
               <PanelLeftClose size={16} strokeWidth={1.9} />
             </button>
           </div>
+
+          <div className="side-section">
+            <div className="side-label">Canvases</div>
+            <div className="canvas-list">
+              {canvases
+                .filter((c) =>
+                  c.name.toLowerCase().includes(canvasQuery.trim().toLowerCase()),
+                )
+                .map((c) => (
+                <div
+                  key={c.id}
+                  className={`canvas-item ${c.id === activeCanvas ? "on" : ""}`}
+                  onClick={() => switchCanvas(c.id)}
+                >
+                  {renaming === c.id ? (
+                    <input
+                      className="canvas-rename nodrag"
+                      autoFocus
+                      defaultValue={c.name}
+                      onClick={(e) => e.stopPropagation()}
+                      onBlur={(e) => commitRename(c.id, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.currentTarget.blur();
+                        else if (e.key === "Escape") setRenaming(null);
+                      }}
+                    />
+                  ) : (
+                    <>
+                      <span
+                        className="canvas-name"
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          setRenaming(c.id);
+                        }}
+                      >
+                        {c.name}
+                      </span>
+                      {canvases.length > 1 && (
+                        <button
+                          className="canvas-del"
+                          title="Excluir canvas"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeCanvas(c.id);
+                          }}
+                        >
+                          <X size={12} strokeWidth={2.2} />
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="side-spacer" />
 
         <div className="side-section">
@@ -613,12 +769,9 @@ export default function App() {
           <Controls className="controls" showInteractive={false} />
           <DrawLayer
             tool={tool}
-            setTool={setTool}
             color={drawColor}
             strokes={strokes}
             setStrokes={setStrokes}
-            texts={texts}
-            setTexts={setTexts}
           />
         </ReactFlow>
 
@@ -630,6 +783,7 @@ export default function App() {
           onClear={() => setStrokes([])}
           onAddAgent={addNode}
           onAddNote={() => addNoteNode("Nota", "")}
+          onAddText={addTextNode}
           onAddBrowser={() => addBrowserNode()}
           showRoutines={showRoutines}
           setShowRoutines={setShowRoutines}
