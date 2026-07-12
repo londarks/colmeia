@@ -16,6 +16,7 @@ function usage() {
   console.log("colmeia — orquestrador de agentes\n");
   console.log("  colmeia list                        lista os agentes conectados a este");
   console.log('  colmeia check "<agente>"            lê a saída recente de outro agente');
+  console.log('  colmeia wait "<agente>" [segs]      bloqueia até o agente ficar em silêncio (padrão 5s)');
   console.log('  colmeia ask "<agente>" "<prompt>"   envia um prompt para outro agente');
   console.log('  colmeia note "<título>" "<texto>"   cria uma nota no canvas');
   console.log('  colmeia connect "<a>" "<b>"         conecta dois nós no canvas');
@@ -74,6 +75,14 @@ async function main() {
       const agent = args[1];
       if (!agent) return fail('Uso: colmeia check "<agente>"');
       console.log(await request(`/check?agent=${encodeURIComponent(agent)}`, "GET"));
+    } else if (command === "wait") {
+      const agent = args[1];
+      if (!agent) return fail('Uso: colmeia wait "<agente>" [segundos_silêncio]');
+      const secs = parseInt(args[2], 10);
+      const q = secs > 0 ? `&idle=${secs * 1000}` : "";
+      console.log(
+        await request(`/wait?agent=${encodeURIComponent(agent)}${q}`, "GET"),
+      );
     } else if (command === "ask") {
       const agent = args[1];
       const prompt = args[2];

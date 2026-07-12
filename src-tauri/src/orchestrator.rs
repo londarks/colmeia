@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::sync::mpsc;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use rand::distributions::Alphanumeric;
 use rand::Rng;
@@ -304,6 +304,58 @@ fn route(
                     match shared.buffer_text(&id) {
                         Some(text) => (200, text),
                         None => (200, "(agente sem saída ainda)".into()),
+                    }
+                }
+                None => (404, format!("Agente \"{agent}\" não encontrado.")),
+            }
+        }
+        (Method::Get, "/wait") => {
+            let agent = query.get("agent").cloned().unwrap_or_default();
+            if agent.is_empty() {
+                return (400, "Uso: colmeia wait \"<agente>\" [segundos_silêncio]".into());
+            }
+            // `idle`: ms de silêncio para considerar o agente ocioso (padrão 5s).
+            // `timeout`: teto de espera em ms (padrão 5min). Ambos vêm da query.
+            let idle_ms: u64 = query.get("idle").and_then(|s| s.parse().ok()).unwrap_or(5000);
+            let timeout_ms: u64 =
+                query.get("timeout").and_then(|s| s.parse().ok()).unwrap_or(300_000);
+            match shared.find_terminal_by_title(&agent) {
+                Some(id) => {
+                    emit_interaction(app, source, &id);
+                    let start = Instant::now();
+                    // Espera o agente COMEÇAR a produzir saída antes de julgar "ocioso",
+                    // para não retornar na hora se ele ainda não reagiu ao prompt.
+                    let grace = Duration::from_millis(12_000);
+                    let mut saw_active = false;
+                    loop {
+                        match shared.idle_millis(&id) {
+                            None => return (404, format!("Sessão de \"{agent}\" não está ativa.")),
+                            Some(idle) => {
+                                if idle < idle_ms {
+                                    saw_active = true;
+                                }
+                                if saw_active && idle >= idle_ms {
+                                    return (
+                                        200,
+                                        format!("\"{agent}\" ocioso há {idle}ms — pronto."),
+                                    );
+                                }
+                                let elapsed = start.elapsed();
+                                if elapsed.as_millis() as u64 >= timeout_ms {
+                                    return (
+                                        200,
+                                        format!(
+                                            "Timeout aguardando \"{agent}\" ({}s). Cheque com colmeia check.",
+                                            timeout_ms / 1000
+                                        ),
+                                    );
+                                }
+                                if !saw_active && elapsed > grace {
+                                    return (200, format!("\"{agent}\" já estava ocioso."));
+                                }
+                            }
+                        }
+                        std::thread::sleep(Duration::from_millis(300));
                     }
                 }
                 None => (404, format!("Agente \"{agent}\" não encontrado.")),

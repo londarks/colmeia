@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine;
@@ -82,6 +82,8 @@ struct PtySession {
     child: Box<dyn Child + Send + Sync>,
     /// Últimos ~16k bytes de saída, para o `colmeia check` ler.
     buffer: Arc<Mutex<Vec<u8>>>,
+    /// Momento da última saída do PTY — usado para detectar ociosidade (`colmeia wait`).
+    last_activity: Arc<Mutex<Instant>>,
 }
 
 /// Estado compartilhado entre os comandos Tauri e o servidor loopback.
@@ -264,6 +266,15 @@ impl Shared {
         let session = sessions.get(id)?;
         let bytes = session.buffer.lock().unwrap();
         Some(String::from_utf8_lossy(&bytes).to_string())
+    }
+
+    /// Há quantos ms a sessão não produz saída (None se a sessão não existe).
+    /// Base para o `colmeia wait` detectar ociosidade pelo silêncio do stream.
+    pub fn idle_millis(&self, id: &str) -> Option<u64> {
+        let sessions = self.sessions.lock().unwrap();
+        let session = sessions.get(id)?;
+        let t = session.last_activity.lock().unwrap();
+        Some(t.elapsed().as_millis() as u64)
     }
 
     /// Junta a saída recente de todos os terminais (sem ANSI), para o Ombro analisar.
@@ -492,6 +503,7 @@ nem slash-commands do Claude. Comandos:\n\
 - `colmeia context`  -> lê as notas de instrução conectadas a você. RODE ISSO PRIMEIRO ao receber uma tarefa.\n\
 - `colmeia list`  -> lista os agentes conectados a você e seus papéis.\n\
 - `colmeia check \"<nome>\"`  -> lê a saída recente de outro agente.\n\
+- `colmeia wait \"<nome>\"`  -> BLOQUEIA até o agente ficar em silêncio (terminar). Use isto depois de `ask` em vez de sondar em loop ou ler arquivos.\n\
 - `colmeia ask \"<nome>\" \"<mensagem>\"`  -> delega/manda uma mensagem a outro agente conectado.\n\
 - `colmeia recruit \"<nome>\" \"<papel>\"`  -> cria um agente com esse NOME e PAPEL, já conectado a você (ex.: `colmeia recruit \"Eng-Core\" engenheiro`). Papéis: engenheiro, revisor, arquiteto, testador. Depois enderece o agente pelo NOME que você deu.\n\
 - também: `colmeia dismiss \"<título>\"`, `colmeia note \"<t>\" \"<c>\"`, `colmeia connect \"<a>\" \"<b>\"`.\n\
@@ -576,6 +588,8 @@ pub fn pty_spawn(
 
     let buffer = Arc::new(Mutex::new(Vec::<u8>::new()));
     let buffer_thread = buffer.clone();
+    let last_activity = Arc::new(Mutex::new(Instant::now()));
+    let activity_thread = last_activity.clone();
 
     // Thread que lê a saída do PTY: envia pelo canal e mantém o buffer rolante.
     let out_channel = channel.clone();
@@ -593,6 +607,7 @@ pub fn pty_spawn(
                             b.drain(0..excess);
                         }
                     }
+                    *activity_thread.lock().unwrap() = Instant::now();
                     let b64 = B64.encode(&buf[..n]);
                     if out_channel.send(PtyOutput::Data { b64 }).is_err() {
                         break;
@@ -611,6 +626,7 @@ pub fn pty_spawn(
             master: pair.master,
             child,
             buffer,
+            last_activity,
         },
     );
 
