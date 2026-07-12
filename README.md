@@ -124,3 +124,11 @@ funciona sem dependências. O Ombro requer o Ollama em execução; os Floors req
 - [x] Conexões tipadas (dados e controle) e desenho livre
 - [x] Automação do browser (clicar e digitar) em páginas de mesma origem
 - [ ] Automação de páginas cross-origin (requer um webview scriptável dedicado)
+
+## Licença
+
+Distribuído sob a **PolyForm Noncommercial License 1.0.0**: você pode usar,
+estudar, modificar e compartilhar o colmeia para qualquer finalidade
+**não-comercial**. **Uso comercial não é permitido** — não é possível vender o
+software nem usá-lo para prover um produto ou serviço pago — sem uma licença
+comercial separada do autor. Veja [LICENSE.md](LICENSE.md).
