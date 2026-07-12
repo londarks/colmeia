@@ -66,6 +66,9 @@ struct NoteBody {
     title: String,
     #[serde(default)]
     content: String,
+    /// Agente (por título) a quem entregar a nota. Vazio = conecta ao criador.
+    #[serde(default)]
+    target: String,
 }
 
 #[derive(Deserialize)]
@@ -196,6 +199,10 @@ struct RoutineBody {
 struct AddNotePayload {
     title: String,
     content: String,
+    /// Nó criador (para conectar a nota a ele por padrão).
+    source: String,
+    /// Título do agente destino (opcional) — conecta a nota a ele.
+    target: String,
 }
 #[derive(Clone, Serialize)]
 struct ConnectPayload {
@@ -331,10 +338,13 @@ fn route(
                         match shared.idle_millis(&id) {
                             None => return (404, format!("Sessão de \"{agent}\" não está ativa.")),
                             Some(idle) => {
-                                if idle < idle_ms {
+                                // Bloqueado esperando aprovação central = ocupado, não ocioso:
+                                // o silêncio não significa que terminou.
+                                let blocked = shared.has_pending_approval(&id);
+                                if idle < idle_ms || blocked {
                                     saw_active = true;
                                 }
-                                if saw_active && idle >= idle_ms {
+                                if saw_active && idle >= idle_ms && !blocked {
                                     return (
                                         200,
                                         format!("\"{agent}\" ocioso há {idle}ms — pronto."),
@@ -386,9 +396,19 @@ fn route(
             Ok(b) => {
                 let _ = app.emit(
                     "colmeia://add-note",
-                    AddNotePayload { title: b.title.clone(), content: b.content },
+                    AddNotePayload {
+                        title: b.title.clone(),
+                        content: b.content,
+                        source: source.to_string(),
+                        target: b.target.clone(),
+                    },
                 );
-                (200, format!("Nota \"{}\" criada no canvas.", b.title))
+                let dest = if b.target.is_empty() {
+                    "você".to_string()
+                } else {
+                    format!("\"{}\"", b.target)
+                };
+                (200, format!("Nota \"{}\" criada e conectada a {dest}.", b.title))
             }
             Err(_) => (400, "Corpo inválido (esperado JSON {title, content}).".into()),
         },
@@ -554,7 +574,7 @@ fn route(
                     .collect::<String>()
             );
             let (tx, rx) = mpsc::channel::<bool>();
-            shared.add_pending(approval_id.clone(), tx);
+            shared.add_pending(approval_id.clone(), source.to_string(), tx);
             let title = shared.title_of(source);
             let _ = app.emit(
                 "colmeia://approval-request",

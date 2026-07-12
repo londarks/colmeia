@@ -265,7 +265,7 @@ export default function App() {
   );
 
   const addNoteNode = useCallback(
-    (title: string, content: string) => {
+    (title: string, content: string, connectToId?: string) => {
       counter += 1;
       const id = `note-${counter}`;
       const offset = (counter % 5) * 42;
@@ -278,8 +278,22 @@ export default function App() {
           style: { width: 280, height: 200 },
         }),
       );
+      // Conecta a nota ao nó indicado (para cair no `colmeia context` dele).
+      if (connectToId && nodesRef.current.some((n) => n.id === connectToId)) {
+        setEdges((eds) =>
+          addEdge(
+            {
+              id: `e-${connectToId}-${id}`,
+              source: connectToId,
+              target: id,
+              animated: true,
+            },
+            eds,
+          ),
+        );
+      }
     },
-    [setNodes],
+    [setNodes, setEdges],
   );
 
   const addTextNode = useCallback(() => {
@@ -539,8 +553,23 @@ export default function App() {
   // Ouve pedidos do backend (agente rodando `colmeia note` / `connect` / interações).
   useEffect(() => {
     const subs = [
-      listen<{ title: string; content: string }>("colmeia://add-note", (e) =>
-        addNoteNode(e.payload.title, e.payload.content),
+      listen<{ title: string; content: string; source: string; target: string }>(
+        "colmeia://add-note",
+        (e) => {
+          const { title, content, source, target } = e.payload;
+          // Destino: o agente indicado (por título), senão o próprio criador.
+          let connectId: string | undefined = source || undefined;
+          if (target) {
+            const t = nodesRef.current.find(
+              (n) =>
+                n.type === "terminal" &&
+                ((n.data as { title?: string }).title ?? n.id).toLowerCase() ===
+                  target.toLowerCase(),
+            );
+            if (t) connectId = t.id;
+          }
+          addNoteNode(title, content, connectId);
+        },
       ),
       listen<{ source: string; target: string }>("colmeia://connect", (e) =>
         connectByTitle(e.payload.source, e.payload.target),

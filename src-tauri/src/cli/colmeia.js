@@ -18,7 +18,7 @@ function usage() {
   console.log('  colmeia check "<agente>"            lê a saída recente de outro agente');
   console.log('  colmeia wait "<agente>" [segs]      bloqueia até o agente ficar em silêncio (padrão 5s)');
   console.log('  colmeia ask "<agente>" "<prompt>"   envia um prompt para outro agente');
-  console.log('  colmeia note "<título>" "<texto>"   cria uma nota no canvas');
+  console.log('  colmeia note "<título>" "<texto>" ["<destino>"]  cria uma nota (conectada ao destino, ou a você)');
   console.log('  colmeia connect "<a>" "<b>"         conecta dois nós no canvas');
   console.log("  colmeia context                     lê as notas conectadas a você (instruções)");
   console.log('  colmeia recruit "<nome>" ["<papel>"] cria um agente (claude) com esse nome, conectado a você');
@@ -91,8 +91,10 @@ async function main() {
     } else if (command === "note") {
       const title = args[1];
       const content = args[2] || "";
-      if (!title) return fail('Uso: colmeia note "<título>" "<texto>"');
-      console.log(await request("/note", "POST", { title, content }));
+      const target = args[3] || "";
+      if (!title)
+        return fail('Uso: colmeia note "<título>" "<texto>" ["<destino>"]');
+      console.log(await request("/note", "POST", { title, content, target }));
     } else if (command === "connect") {
       const source = args[1];
       const target = args[2];

@@ -92,8 +92,10 @@ pub struct Shared {
     nodes: Mutex<Vec<NodeInfo>>,
     edges: Mutex<Vec<EdgeInfo>>,
     routines: Mutex<HashMap<String, RoutineHandle>>,
-    /// Aprovações pendentes: id -> canal para entregar a decisão (true=permitir).
-    pending_approvals: Mutex<HashMap<String, Sender<bool>>>,
+    /// Aprovações pendentes: id -> (nó que pediu, canal para entregar a decisão).
+    /// O nó é guardado para o `colmeia wait` saber que um agente está BLOQUEADO
+    /// esperando aprovação (silêncio ≠ terminou).
+    pending_approvals: Mutex<HashMap<String, (String, Sender<bool>)>>,
     /// Regras de auto-aprovação da sessão: chave "node\u{1f}tool" -> permitir sem perguntar.
     auto_allow: Mutex<HashSet<String>>,
     /// Token exigido em toda chamada ao servidor loopback.
@@ -140,13 +142,26 @@ impl Shared {
     }
 
     /// Registra uma aprovação pendente (o `/approve` bloqueia até a decisão).
-    pub fn add_pending(&self, id: String, tx: Sender<bool>) {
-        self.pending_approvals.lock().unwrap().insert(id, tx);
+    pub fn add_pending(&self, id: String, node: String, tx: Sender<bool>) {
+        self.pending_approvals.lock().unwrap().insert(id, (node, tx));
     }
 
     /// Retira o canal de uma aprovação (idempotente).
     pub fn take_pending(&self, id: &str) -> Option<Sender<bool>> {
-        self.pending_approvals.lock().unwrap().remove(id)
+        self.pending_approvals
+            .lock()
+            .unwrap()
+            .remove(id)
+            .map(|(_, tx)| tx)
+    }
+
+    /// Há alguma aprovação pendente para este nó? (agente bloqueado, não ocioso).
+    pub fn has_pending_approval(&self, node: &str) -> bool {
+        self.pending_approvals
+            .lock()
+            .unwrap()
+            .values()
+            .any(|(n, _)| n == node)
     }
 
     /// Auto-aprova escritas (Write/Edit/...) dentro da pasta do agente, se ligado no nó.
@@ -506,7 +521,7 @@ nem slash-commands do Claude. Comandos:\n\
 - `colmeia wait \"<nome>\"`  -> BLOQUEIA até o agente ficar em silêncio (terminar). Use isto depois de `ask` em vez de sondar em loop ou ler arquivos.\n\
 - `colmeia ask \"<nome>\" \"<mensagem>\"`  -> delega/manda uma mensagem a outro agente conectado.\n\
 - `colmeia recruit \"<nome>\" \"<papel>\"`  -> cria um agente com esse NOME e PAPEL, já conectado a você (ex.: `colmeia recruit \"Eng-Core\" engenheiro`). Papéis: engenheiro, revisor, arquiteto, testador. Depois enderece o agente pelo NOME que você deu.\n\
-- também: `colmeia dismiss \"<título>\"`, `colmeia note \"<t>\" \"<c>\"`, `colmeia connect \"<a>\" \"<b>\"`.\n\
+- também: `colmeia dismiss \"<título>\"`, `colmeia note \"<t>\" \"<c>\" [\"<destino>\"]` (a nota vira contexto do destino — use para entregar specs a um agente), `colmeia connect \"<a>\" \"<b>\"`.\n\
 Os agentes conectados são definidos pelas linhas do canvas. Ao coordenar, use SEMPRE esses comandos de shell — \
 nunca os seus próprios subagentes/tools internos."
     )
