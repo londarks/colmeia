@@ -440,9 +440,9 @@ export default function App() {
   // aceitando os argumentos em qualquer ordem.
   const recruitAgent = useCallback(
     (arg1: string, arg2: string, sourceId: string) => {
-      const cands = [arg1, arg2]
-        .map((s) => (s || "").toLowerCase().trim())
-        .filter(Boolean);
+      const name = (arg1 || "").trim();
+      const roleStr = (arg2 || "").trim();
+      const cands = [name, roleStr].map((s) => s.toLowerCase()).filter(Boolean);
       const AGENT_IDS: AgentId[] = ["shell", "claude", "codex", "ollama"];
       const agentId =
         (cands.find((c) => AGENT_IDS.includes(c as AgentId)) as AgentId) ||
@@ -458,11 +458,9 @@ export default function App() {
               (s.includes(label) || label.includes(s) || s.includes(r.id)))
           );
         });
-      let role: Role | undefined;
-      for (const c of cands) {
-        role = matchRole(c);
-        if (role) break;
-      }
+      // Papel vem do 2º argumento; se ausente, tenta inferir do nome (compat: recruit "Testador").
+      let role: Role | undefined = matchRole(roleStr.toLowerCase());
+      if (!role && !roleStr) role = matchRole(name.toLowerCase());
       // Herda a pasta de trabalho do recrutador (toda a força-tarefa na mesma pasta).
       const cwd = (
         nodesRef.current.find((n) => n.id === sourceId)?.data as {
@@ -472,11 +470,20 @@ export default function App() {
       counter += 1;
       const id = `${agentId}-${counter}`;
       const offset = (counter % 5) * 42;
+      // O nome vira o título — a menos que seja só uma palavra-chave (runtime, ou o
+      // papel inferido do próprio nome), caso em que cai no rótulo auto-numerado.
+      const nameLower = name.toLowerCase();
+      const nameIsKeyword =
+        AGENT_IDS.includes(nameLower as AgentId) ||
+        (!roleStr && !!matchRole(nameLower));
       setNodes((nds) => {
         const sameKind = nds.filter(
           (n) => (n.data as { agent?: AgentId }).agent === agentId,
         ).length;
-        const title = `${AGENTS[agentId].label} ${sameKind + 1}`;
+        const title =
+          name && !nameIsKeyword
+            ? name
+            : `${AGENTS[agentId].label} ${sameKind + 1}`;
         return nds.concat({
           id,
           type: "terminal",

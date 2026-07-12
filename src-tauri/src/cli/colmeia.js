@@ -20,7 +20,7 @@ function usage() {
   console.log('  colmeia note "<título>" "<texto>"   cria uma nota no canvas');
   console.log('  colmeia connect "<a>" "<b>"         conecta dois nós no canvas');
   console.log("  colmeia context                     lê as notas conectadas a você (instruções)");
-  console.log('  colmeia recruit "<papel>"           cria um agente (claude) com esse papel, conectado a você');
+  console.log('  colmeia recruit "<nome>" ["<papel>"] cria um agente (claude) com esse nome, conectado a você');
   console.log("                                      papeis: engenheiro, revisor, arquiteto, testador, orquestrador");
   console.log('  colmeia dismiss "<título>"          remove um agente do canvas');
   console.log('  colmeia browse "<url>"              abre uma página no canvas e lê o texto dela');
@@ -92,10 +92,45 @@ async function main() {
     } else if (command === "context") {
       console.log(await request("/context", "GET"));
     } else if (command === "recruit") {
-      const agent = args[1];
+      const name = args[1];
       const role = args[2] || "";
-      if (!agent) return fail('Uso: colmeia recruit "<papel>"  (ex: engenheiro, revisor)');
-      console.log(await request("/recruit", "POST", { agent, role }));
+      if (!name)
+        return fail(
+          'Uso: colmeia recruit "<nome>" ["<papel>"]  (papéis: engenheiro, revisor, arquiteto, testador, orquestrador)',
+        );
+      // Mesma lógica de casamento de papel do frontend (id em inglês + label em PT).
+      const ROLES = [
+        { id: "orquestrador", label: "orquestrador" },
+        { id: "architect", label: "arquiteto" },
+        { id: "engineer", label: "engenheiro" },
+        { id: "reviewer", label: "revisor" },
+        { id: "tester", label: "testador" },
+      ];
+      const matchRole = (s) => {
+        s = (s || "").toLowerCase().trim();
+        if (!s) return null;
+        return ROLES.find(
+          (r) =>
+            r.id === s ||
+            r.label === s ||
+            (s.length >= 4 &&
+              (s.includes(r.label) || r.label.includes(s) || s.includes(r.id))),
+        );
+      };
+      // Papel efetivo: o 2º arg; se ausente, tenta inferir do nome (compat: recruit "Testador").
+      const effective = role ? matchRole(role) : matchRole(name);
+      if (role && !matchRole(role)) {
+        console.log(
+          `Aviso: papel "${role}" não reconhecido — o agente será criado SEM papel. ` +
+            "Papéis válidos: engenheiro, revisor, arquiteto, testador, orquestrador.",
+        );
+      } else if (!effective) {
+        console.log(
+          `Aviso: nenhum papel informado — "${name}" será criado sem papel. ` +
+            `Use: colmeia recruit "${name}" "<papel>".`,
+        );
+      }
+      console.log(await request("/recruit", "POST", { agent: name, role }));
     } else if (command === "dismiss") {
       const title = args[1];
       if (!title) return fail('Uso: colmeia dismiss "<título>"');

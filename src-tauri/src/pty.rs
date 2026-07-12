@@ -493,7 +493,7 @@ nem slash-commands do Claude. Comandos:\n\
 - `colmeia list`  -> lista os agentes conectados a você e seus papéis.\n\
 - `colmeia check \"<nome>\"`  -> lê a saída recente de outro agente.\n\
 - `colmeia ask \"<nome>\" \"<mensagem>\"`  -> delega/manda uma mensagem a outro agente conectado.\n\
-- `colmeia recruit \"<papel>\"`  -> cria um novo agente da equipe (ex.: `colmeia recruit engenheiro`), já conectado a você.\n\
+- `colmeia recruit \"<nome>\" \"<papel>\"`  -> cria um agente com esse NOME e PAPEL, já conectado a você (ex.: `colmeia recruit \"Eng-Core\" engenheiro`). Papéis: engenheiro, revisor, arquiteto, testador. Depois enderece o agente pelo NOME que você deu.\n\
 - também: `colmeia dismiss \"<título>\"`, `colmeia note \"<t>\" \"<c>\"`, `colmeia connect \"<a>\" \"<b>\"`.\n\
 Os agentes conectados são definidos pelas linhas do canvas. Ao coordenar, use SEMPRE esses comandos de shell — \
 nunca os seus próprios subagentes/tools internos."
