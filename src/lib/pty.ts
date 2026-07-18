@@ -124,6 +124,29 @@ export function workspaceSave(data: WorkspaceData): Promise<void> {
 export function workspaceLoad(): Promise<WorkspaceData | null> {
   return invoke("workspace_load");
 }
+export interface WorkspaceList {
+  current: string;
+  names: string[];
+}
+
+export function workspaceList(): Promise<WorkspaceList> {
+  return invoke("workspace_list");
+}
+export function workspaceSwitch(name: string): Promise<void> {
+  return invoke("workspace_switch", { name });
+}
+export function workspaceRename(oldName: string, newName: string): Promise<void> {
+  return invoke("workspace_rename", { oldName, newName });
+}
+export function workspaceDelete(name: string): Promise<void> {
+  return invoke("workspace_delete", { name });
+}
+export function workspaceMetaLoad(): Promise<unknown | null> {
+  return invoke("workspace_meta_load");
+}
+export function workspaceMetaSave(data: unknown): Promise<void> {
+  return invoke("workspace_meta_save", { data });
+}
 
 /** Pede ao Ombro (Ollama local) uma análise dos agentes + próximo passo. */
 export function ombroAnalyze(model?: string): Promise<string> {
