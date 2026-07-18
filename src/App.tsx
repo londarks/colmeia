@@ -32,6 +32,8 @@ import { ApprovalsPanel } from "./components/ApprovalsPanel";
 import { FloorsPanel } from "./components/FloorsPanel";
 import { OmbroPanel } from "./components/OmbroPanel";
 import { TitleBar } from "./components/TitleBar";
+import { WorkspacePanel } from "./components/WorkspacePanel";
+import { useWorkspacePanelManager } from "./hooks/useWorkspacePanelManager";
 import { AGENTS, type AgentId } from "./lib/agents";
 import { ROLES, ROLE_MAP, type Role } from "./lib/roles";
 import { THEMES, getStoredTheme, applyTheme } from "./lib/theme";
@@ -40,6 +42,7 @@ import {
   workspaceSave,
   workspaceLoad,
   type ApprovalRequest,
+  type WorkspaceData,
 } from "./lib/pty";
 import "./App.css";
 
@@ -108,29 +111,39 @@ export default function App() {
     texts: textsRef.current,
   });
 
+  const applyWorkspace = useCallback((ws: WorkspaceData | null) => {
+    if (!ws || !Array.isArray(ws.nodes)) return;
+    setNodes(ws.nodes as Node[]);
+    setEdges((ws.edges as Edge[]) ?? []);
+    setStrokes(((ws as { strokes?: Stroke[] }).strokes as Stroke[]) ?? []);
+    setTexts(((ws as { texts?: TextItem[] }).texts as TextItem[]) ?? []);
+    // Evita colisão de ids ao criar novos nós.
+    const maxN = (ws.nodes as Node[]).reduce((m, n) => {
+      const num = parseInt(String(n.id).split("-").pop() ?? "0", 10);
+      return Number.isFinite(num) ? Math.max(m, num) : m;
+    }, 0);
+    counter = Math.max(counter, maxN);
+  }, [setEdges, setNodes]);
+
+  const { workspaceInfo, switchWorkspace, renameWorkspace, deleteWorkspace } =
+    useWorkspacePanelManager({
+      buildWorkspace,
+      applyWorkspace,
+      cancelPendingSave: () => window.clearTimeout(saveTimer.current),
+      setAutosaveEnabled: (enabled) => {
+        readyRef.current = enabled;
+      },
+    });
+
   // Carrega o workspace salvo ao iniciar.
   useEffect(() => {
     workspaceLoad()
-      .then((ws) => {
-        if (ws && Array.isArray(ws.nodes)) {
-          setNodes(ws.nodes as Node[]);
-          setEdges((ws.edges as Edge[]) ?? []);
-          setStrokes(((ws as { strokes?: Stroke[] }).strokes as Stroke[]) ?? []);
-          setTexts(((ws as { texts?: TextItem[] }).texts as TextItem[]) ?? []);
-          // Evita colisão de ids ao criar novos nós.
-          const maxN = (ws.nodes as Node[]).reduce((m, n) => {
-            const num = parseInt(String(n.id).split("-").pop() ?? "0", 10);
-            return Number.isFinite(num) ? Math.max(m, num) : m;
-          }, 0);
-          counter = Math.max(counter, maxN);
-        }
-      })
+      .then(applyWorkspace)
       .catch(() => {})
       .finally(() => {
         readyRef.current = true;
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [applyWorkspace]);
 
   // Auto-salva (debounced) a cada mudança, depois do carregamento inicial.
   useEffect(() => {
@@ -546,8 +559,15 @@ export default function App() {
               <PanelLeftClose size={16} strokeWidth={1.9} />
             </button>
           </div>
-          <div className="side-spacer" />
 
+        <WorkspacePanel
+          names={workspaceInfo.names}
+          current={workspaceInfo.current}
+          onSwitch={switchWorkspace}
+          onCreate={switchWorkspace}
+          onRename={renameWorkspace}
+          onDelete={deleteWorkspace}
+        />
         <div className="side-section">
           <div className="side-label">Tema</div>
           <label className="theme-picker" title="Tema">
