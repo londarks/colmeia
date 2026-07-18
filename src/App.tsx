@@ -14,7 +14,7 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import { listen } from "@tauri-apps/api/event";
-import { PanelLeftClose, PanelLeft, Plus, X, Search } from "lucide-react";
+import { PanelLeftClose, PanelLeft } from "lucide-react";
 import logoUrl from "./assets/logo.png";
 import { TerminalNode } from "./nodes/TerminalNode";
 import { NoteNode } from "./nodes/NoteNode";
@@ -28,6 +28,7 @@ import { ApprovalsPanel } from "./components/ApprovalsPanel";
 import { FloorsPanel } from "./components/FloorsPanel";
 import { OmbroPanel } from "./components/OmbroPanel";
 import { TitleBar } from "./components/TitleBar";
+import { WorkspacePanel } from "./components/WorkspacePanel";
 import { AGENTS, type AgentId } from "./lib/agents";
 import { ROLES, ROLE_MAP, type Role } from "./lib/roles";
 import { THEMES, getStoredTheme, applyTheme } from "./lib/theme";
@@ -59,8 +60,6 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [canvases, setCanvases] = useState<WorkspaceMeta[]>([]);
   const [activeCanvas, setActiveCanvas] = useState<string>("");
-  const [renaming, setRenaming] = useState<string | null>(null);
-  const [canvasQuery, setCanvasQuery] = useState("");
   const [tool, setTool] = useState<DrawTool>("select");
   const [drawColor, setDrawColor] = useState("#e6e9ef");
   const [strokes, setStrokes] = useState<Stroke[]>([]);
@@ -202,10 +201,10 @@ export default function App() {
   };
 
   const commitRename = async (id: string, name: string) => {
-    setRenaming(null);
     const idx = await workspaceRename(id, name);
     setCanvases(idx.items);
   };
+
 
   useEffect(() => {
     applyTheme(theme);
@@ -654,26 +653,6 @@ export default function App() {
         {sidebarOpen && (
         <aside className="sidebar">
           <div className="side-topbar">
-            <div className="side-search">
-              <Search size={14} strokeWidth={1.9} />
-              <input
-                value={canvasQuery}
-                onChange={(e) => setCanvasQuery(e.target.value)}
-                placeholder="Buscar canvas…"
-              />
-              {canvasQuery && (
-                <button
-                  className="side-search-clear"
-                  onClick={() => setCanvasQuery("")}
-                  title="Limpar"
-                >
-                  <X size={12} strokeWidth={2.2} />
-                </button>
-              )}
-            </div>
-            <button className="side-new" onClick={newCanvas} title="Novo canvas">
-              <Plus size={17} strokeWidth={2.2} />
-            </button>
             <button
               className="side-collapse"
               onClick={() => setSidebarOpen(false)}
@@ -683,60 +662,14 @@ export default function App() {
             </button>
           </div>
 
-          <div className="side-section">
-            <div className="side-label">Canvases</div>
-            <div className="canvas-list">
-              {canvases
-                .filter((c) =>
-                  c.name.toLowerCase().includes(canvasQuery.trim().toLowerCase()),
-                )
-                .map((c) => (
-                <div
-                  key={c.id}
-                  className={`canvas-item ${c.id === activeCanvas ? "on" : ""}`}
-                  onClick={() => switchCanvas(c.id)}
-                >
-                  {renaming === c.id ? (
-                    <input
-                      className="canvas-rename nodrag"
-                      autoFocus
-                      defaultValue={c.name}
-                      onClick={(e) => e.stopPropagation()}
-                      onBlur={(e) => commitRename(c.id, e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") e.currentTarget.blur();
-                        else if (e.key === "Escape") setRenaming(null);
-                      }}
-                    />
-                  ) : (
-                    <>
-                      <span
-                        className="canvas-name"
-                        onDoubleClick={(e) => {
-                          e.stopPropagation();
-                          setRenaming(c.id);
-                        }}
-                      >
-                        {c.name}
-                      </span>
-                      {canvases.length > 1 && (
-                        <button
-                          className="canvas-del"
-                          title="Excluir canvas"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeCanvas(c.id);
-                          }}
-                        >
-                          <X size={12} strokeWidth={2.2} />
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          <WorkspacePanel
+            items={canvases}
+            active={activeCanvas}
+            onSwitch={switchCanvas}
+            onCreate={newCanvas}
+            onRename={commitRename}
+            onDelete={removeCanvas}
+          />
 
           <div className="side-spacer" />
 
