@@ -44,6 +44,7 @@ import {
   type ApprovalRequest,
   type WorkspaceMeta,
   type WorkspaceData,
+  type WorkspaceIndex,
 } from "./lib/pty";
 import "./App.css";
 
@@ -198,6 +199,39 @@ export default function App() {
       setActiveCanvas(idx.active);
       applyCanvas(await workspaceLoad(idx.active));
     }
+  };
+
+  // Remoção em lote (multi-seleção / cascata de pasta). Mantém a garantia de
+  // ≥1 workspace: se a seleção cobrir todos, aborta sem apagar nada.
+  const removeCanvases = async (ids: string[]) => {
+    const toDelete = new Set(ids);
+    // Filtra todos os canvas a serem removidos da lista de canvas.
+    const survivors = canvases.filter((c) => !toDelete.has(c.id));
+    if (survivors.length === 0) return; // não deixa o app sem nenhum canvas
+    // Se o ativo está no lote, muda para um sobrevivente antes de apagar.
+    if (toDelete.has(activeRef.current)) {
+      const next = survivors[0].id;
+      let ws: WorkspaceData | null = null;
+      try {
+        ws = await workspaceLoad(next);
+      } catch(e) {
+        console.error("Erro ao carregar workflow pós-deleção!");
+      }
+      activeRef.current = next;
+      setActiveCanvas(next);
+      applyCanvas(ws ?? { nodes: [], edges: [], strokes: [] });
+      workspaceSetActive(next).catch(() => {});
+    }
+    let idx: WorkspaceIndex | null = null;
+    for (const id of ids) {
+      try {
+        idx = await workspaceDelete(id);
+      } catch(e) {
+        console.error(`Erro ao deletar workflow com id ${id}!`);
+        break; // Cancelar deleção dos próximos porque ocorreu um erro.
+      }
+    }
+    if (idx) setCanvases(idx.items);
   };
 
   const commitRename = async (id: string, name: string) => {
@@ -669,10 +703,8 @@ export default function App() {
             onCreate={newCanvas}
             onRename={commitRename}
             onDelete={removeCanvas}
+            onDeleteMany={removeCanvases}
           />
-
-          <div className="side-spacer" />
-
         <div className="side-section">
           <div className="side-label">Tema</div>
           <label className="theme-picker" title="Tema">

@@ -241,10 +241,12 @@
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-muted);
+  flex: none;
 }
 .theme-picker select {
   appearance: none;
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   color: var(--text-secondary);
@@ -252,6 +254,11 @@
   font-family: inherit;
   cursor: pointer;
   outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-indent: 0;
+  padding-left: 0;
 }
 .theme-picker select option {
   background: var(--bg-input);
@@ -1445,28 +1452,42 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+  min-height: 0;
+}
+.ws-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: none;
+}
+.ws-head > .side-label {
+  padding: 0 8px 2px;
+}
+.ws-scroll {
+  flex: 1;
   min-height: 0;
   overflow-y: auto;
-}
-.ws-tree > .side-label {
-  padding: 0 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 4px;
 }
 
 /* Botões estilo "New Tab" (Zen): pílula larga, bem visível. */
 .ws-add {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 11px 14px;
+  padding: 9px 12px;
   font-size: 14px;
   font-weight: 500;
   text-align: left;
   color: var(--text-secondary);
   background: var(--bg-hover);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background 0.14s ease, color 0.14s ease;
 }
@@ -1481,17 +1502,11 @@
   flex: none;
 }
 
-.ws-sep {
-  height: 1px;
-  margin: 8px 6px;
-  background: var(--border-subtle);
-}
-
 .ws-folder-head {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 10px 10px;
+  gap: 8px;
+  padding: 7px 10px;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-secondary);
@@ -1508,6 +1523,11 @@
   border-color: var(--accent);
   background: var(--bg-hover);
 }
+.ws-folder-head.is-selected {
+  background: var(--accent-muted);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
 .ws-chevron {
   flex: none;
   color: var(--text-muted);
@@ -1516,7 +1536,7 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 2px 0 4px 22px;
+  padding: 1px 0 2px 20px;
 }
 
 .ws-root {
@@ -1534,8 +1554,8 @@
 .ws-item {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 10px 12px;
+  gap: 9px;
+  padding: 7px 10px;
   font-size: 14px;
   color: var(--text-secondary);
   border: 1px solid transparent;
@@ -1551,6 +1571,15 @@
   background: var(--bg-selected);
   color: var(--text-primary);
   font-weight: 500;
+}
+/* Seleção múltipla (ctrl/shift+click): anel de acento, distinto do "atual". */
+.ws-item.is-selected {
+  background: var(--accent-muted);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.ws-item.is-current.is-selected {
+  background: color-mix(in srgb, var(--accent) 30%, var(--bg-selected));
 }
 .ws-color {
   width: 14px;
