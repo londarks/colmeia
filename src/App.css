@@ -1664,11 +1664,11 @@
   color: var(--text-primary);
 }
 .ws-menu-danger {
-  color: #f87171;
+  color: var(--error);
 }
 .ws-menu-danger:hover {
-  color: #fca5a5;
-  background: color-mix(in srgb, #ef4444 16%, transparent);
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 16%, transparent);
 }
 .ws-dialog-backdrop {
   position: fixed;
@@ -1722,9 +1722,9 @@
 }
 .ws-dialog-confirm {
   color: #fff;
-  background: #dc2626;
-  border: 1px solid #dc2626;
+  background: var(--error);
+  border: 1px solid var(--error);
 }
 .ws-dialog-confirm:hover {
-  background: #b91c1c;
+  background: color-mix(in srgb, var(--error) 80%, var(--bg-sidebar));
 }
