@@ -68,7 +68,7 @@
 
 /* ============================ Sidebar esquerda ============================ */
 .sidebar {
-  width: 224px;
+  width: 280px;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -121,76 +121,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.6px;
   text-transform: uppercase;
   color: var(--text-faint);
   padding: 0 6px 2px;
-}
-.canvas-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.canvas-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 6px 0 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  color: var(--text-secondary);
-  transition: background 0.12s ease, color 0.12s ease;
-}
-.canvas-item:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-.canvas-item.on {
-  background: var(--accent-muted);
-  color: var(--accent);
-}
-.canvas-name {
-  flex: 1;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.canvas-rename {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  background: var(--bg-editor);
-  border: 1px solid var(--accent);
-  border-radius: 6px;
-  padding: 3px 6px;
-  outline: none;
-}
-.canvas-del {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  color: var(--text-faint);
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  opacity: 0;
-}
-.canvas-item:hover .canvas-del {
-  opacity: 1;
-}
-.canvas-del:hover {
-  color: var(--error);
-  background: color-mix(in srgb, var(--error) 16%, transparent);
 }
 .side-actions {
   display: flex;
@@ -259,63 +195,6 @@
   gap: 6px;
   margin: -6px -4px -2px 0;
 }
-.side-new {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  color: var(--accent);
-  background: var(--accent-muted);
-  border: 1px solid transparent;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: filter 0.12s ease;
-}
-.side-new:hover {
-  filter: brightness(1.15);
-}
-.side-search {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 8px;
-  height: 32px;
-  color: var(--text-faint);
-  background: var(--bg-editor);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-.side-search:focus-within {
-  border-color: var(--accent);
-}
-.side-search input {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
-  color: var(--text-primary);
-  background: transparent;
-  border: none;
-  outline: none;
-}
-.side-search-clear {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  color: var(--text-faint);
-  background: transparent;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-.side-search-clear:hover {
-  color: var(--text-primary);
-  background: var(--bg-hover);
-}
 .side-collapse,
 .sidebar-reopen {
   display: inline-flex;
@@ -362,10 +241,12 @@
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-muted);
+  flex: none;
 }
 .theme-picker select {
   appearance: none;
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   color: var(--text-secondary);
@@ -373,6 +254,11 @@
   font-family: inherit;
   cursor: pointer;
   outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-indent: 0;
+  padding-left: 0;
 }
 .theme-picker select option {
   background: var(--bg-input);
@@ -1560,4 +1446,285 @@
 }
 .approval-actions {
   flex-wrap: wrap;
+}
+/* ==================== Árvore de workspaces ==================== */
+.ws-tree {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+.ws-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: none;
+}
+.ws-head > .side-label {
+  padding: 0 8px 2px;
+}
+.ws-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 4px;
+}
+
+/* Botões estilo "New Tab" (Zen): pílula larga, bem visível. */
+.ws-add {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.ws-add:hover {
+  background: var(--bg-selected);
+  color: var(--text-primary);
+}
+.ws-add:active {
+  transform: translateY(1px);
+}
+.ws-add svg {
+  flex: none;
+}
+
+.ws-folder-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border: 1px dashed transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.ws-folder-head:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.ws-folder-head.is-dragover {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+.ws-folder-head.is-selected {
+  background: var(--accent-muted);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.ws-chevron {
+  flex: none;
+  color: var(--text-muted);
+}
+.ws-folder-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 1px 0 2px 20px;
+}
+
+.ws-root {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 12px;
+  border: 1px dashed transparent;
+  border-radius: 10px;
+}
+.ws-root.is-dragover {
+  border-color: var(--accent);
+}
+
+.ws-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.ws-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.ws-item.is-current {
+  background: var(--bg-selected);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+/* Seleção múltipla (ctrl/shift+click): anel de acento, distinto do "atual". */
+.ws-item.is-selected {
+  background: var(--accent-muted);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.ws-item.is-current.is-selected {
+  background: color-mix(in srgb, var(--accent) 30%, var(--bg-selected));
+}
+.ws-color {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+.ws-color:hover {
+  box-shadow: 0 0 0 2px var(--text-primary);
+}
+.ws-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ws-edit {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  outline: none;
+}
+
+.ws-palette {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px 10px;
+}
+.ws-swatch {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s ease;
+}
+.ws-swatch:hover {
+  transform: scale(1.15);
+}
+.ws-swatch.is-active {
+  border-color: var(--text-primary);
+}
+
+/* Menu de contexto (botão direito na área de workspaces) */
+.ws-menu {
+  position: fixed;
+  z-index: 100;
+  min-width: 200px;
+  padding: 6px;
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45);
+}
+.ws-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  text-align: left;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.ws-menu-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.ws-menu-danger {
+  color: var(--error);
+}
+.ws-menu-danger:hover {
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 16%, transparent);
+}
+.ws-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.5);
+}
+.ws-dialog {
+  width: min(100%, 380px);
+  padding: 22px;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.55);
+}
+.ws-dialog h2 {
+  margin: 0 0 10px;
+  font-size: 17px;
+  color: var(--text-primary);
+}
+.ws-dialog p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.ws-dialog p b {
+  color: var(--text-primary);
+}
+.ws-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+.ws-dialog-actions button {
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.ws-dialog-cancel {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+}
+.ws-dialog-confirm {
+  color: #fff;
+  background: var(--error);
+  border: 1px solid var(--error);
+}
+.ws-dialog-confirm:hover {
+  background: color-mix(in srgb, var(--error) 80%, var(--bg-sidebar));
 }
