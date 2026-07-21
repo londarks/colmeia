@@ -211,15 +211,16 @@ export default function App() {
     // Se o ativo está no lote, muda para um sobrevivente antes de apagar.
     if (toDelete.has(activeRef.current)) {
       const next = survivors[0].id;
-      let ws: WorkspaceData | null = null;
+      let ws: WorkspaceData;
       try {
         ws = await workspaceLoad(next);
-      } catch(e) {
-        console.error("Erro ao carregar workflow pós-deleção!");
+      } catch (e) {
+        console.error("Erro ao carregar workflow pós-deleção!", e);
+        return;
       }
       activeRef.current = next;
       setActiveCanvas(next);
-      applyCanvas(ws ?? { nodes: [], edges: [], strokes: [] });
+      applyCanvas(ws);
       workspaceSetActive(next).catch(() => {});
     }
     let idx: WorkspaceIndex | null = null;
