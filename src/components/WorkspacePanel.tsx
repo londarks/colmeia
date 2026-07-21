@@ -187,11 +187,14 @@ export function WorkspacePanel({
     // Se o item arrastado faz parte da seleção, move todos os ws selecionados;
     // senão move só ele (a seleção já foi resetada no dragstart).
     const targets = selWs.has(id) ? Array.from(selWs) : [id];
-    setMeta((m) => {
-      const ws = { ...m.ws };
-      for (const t of targets) ws[t] = { ...(m.ws[t] ?? metaOf(t)), folder };
-      return { ...m, ws };
-    });
+setMeta((m) => {
+  const ws = { ...m.ws };
+  for (const t of targets) {
+    const prev = m.ws[t] ?? { folder: null, color: WS_COLORS[9] };
+    ws[t] = { ...prev, folder };
+  }
+  return { ...m, ws };
+});
     clearSelection();
   };
 
