@@ -1464,6 +1464,52 @@
 .ws-head > .side-label {
   padding: 0 8px 2px;
 }
+/* Campo de busca: mesma pílula dos .ws-add, encaixado no rodapé do head. */
+.ws-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 10px;
+  height: 34px;
+  margin-top: 2px;
+  color: var(--text-faint);
+  background: var(--bg-editor);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.ws-search:focus-within {
+  border-color: var(--accent);
+}
+.ws-search svg {
+  flex: none;
+}
+.ws-search input {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+.ws-search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--text-faint);
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.ws-search-clear:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
 .ws-scroll {
   flex: 1;
   min-height: 0;

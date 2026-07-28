@@ -16,6 +16,8 @@ import {
   FolderOpen,
   FolderPlus,
   Plus,
+  Search,
+  X,
 } from "lucide-react";
 import type { WorkspaceMeta } from "../lib/pty";
 
@@ -109,6 +111,7 @@ export function WorkspacePanel({
   const [selFolders, setSelFolders] = useState<Set<string>>(() => new Set());
   const lastClicked = useRef<string | null>(null); // âncora do shift+click
   const saveTimer = useRef<number | undefined>(undefined);
+  const [query, setQuery] = useState("");
 
   // Persiste os metadados (debounced) a cada mudança.
   useEffect(() => {
@@ -137,6 +140,19 @@ export function WorkspacePanel({
 
   const metaOf = (id: string) =>
     meta.ws[id] ?? { folder: null, color: WS_COLORS[9] };
+
+  // Busca por workspace/pasta; remoção usa a lista completa.
+  const q = query.trim().toLowerCase();
+  const filtering = q.length > 0;
+  const hit = (name: string) => name.toLowerCase().includes(q);
+  // Match na pasta mostra seus filhos.
+  const folderHit = (id: string | null) =>
+    id !== null && meta.folders.some((f) => f.id === id && hit(f.name));
+  const shown = filtering
+    ? items.filter((w) => hit(w.name) || folderHit(metaOf(w.id).folder))
+    : items;
+  const folderShown = (f: WsFolder, inside: WorkspaceMeta[]) =>
+    !filtering || hit(f.name) || inside.length > 0;
 
   const setWsMeta = (id: string, patch: Partial<{ folder: string | null; color: string }>) =>
     setMeta((m) => ({
@@ -217,12 +233,13 @@ setMeta((m) => {
   const visualOrder = (): string[] => {
     const order: string[] = [];
     for (const f of meta.folders) {
+      const inside = shown.filter((w) => metaOf(w.id).folder === f.id);
+      if (!folderShown(f, inside)) continue;
       order.push(f.id);
-      if (f.open) {
-        for (const w of items) if (metaOf(w.id).folder === f.id) order.push(w.id);
-      }
+      // Busca abre pastas sem persistir a mudança.
+      if (f.open || filtering) for (const w of inside) order.push(w.id);
     }
-    for (const w of items) {
+    for (const w of shown) {
       const fld = metaOf(w.id).folder;
       if (!fld || !meta.folders.some((x) => x.id === fld)) order.push(w.id);
     }
@@ -380,7 +397,7 @@ setMeta((m) => {
   };
 
   // Workspaces cuja pasta não existe (ou é null) vão para a raiz.
-  const rootWs = items.filter((w) => {
+  const rootWs = shown.filter((w) => {
     const f = metaOf(w.id).folder;
     return !f || !meta.folders.some((x) => x.id === f);
   });
@@ -397,6 +414,23 @@ setMeta((m) => {
           <FolderPlus size={17} strokeWidth={1.9} />
           <span>Nova pasta</span>
         </button>
+        <div className="ws-search">
+          <Search size={14} strokeWidth={1.9} />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar…"
+          />
+          {query && (
+            <button
+              className="ws-search-clear"
+              onClick={() => setQuery("")}
+              title="Limpar"
+            >
+              <X size={12} strokeWidth={2.2} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div
@@ -413,7 +447,11 @@ setMeta((m) => {
         }}
       >
         {meta.folders.map((f) => {
-          const inside = items.filter((w) => metaOf(w.id).folder === f.id);
+          const inside = shown.filter((w) => metaOf(w.id).folder === f.id);
+          // Oculta pastas sem match.
+          if (!folderShown(f, inside)) return null;
+          // Busca abre pastas sem persistir a mudança.
+          const open = f.open || filtering;
           const isEditing = editing?.kind === "folder" && editing.id === f.id;
           return (
             <div key={f.id} className="ws-folder">
@@ -440,19 +478,19 @@ setMeta((m) => {
                 onDragLeave={() => setDragOver(null)}
                 onDrop={onDropTo(f.id)}
               >
-                {f.open ? (
+                {open ? (
                   <ChevronDown size={15} strokeWidth={2} className="ws-chevron" />
                 ) : (
                   <ChevronRight size={15} strokeWidth={2} className="ws-chevron" />
                 )}
-                {f.open ? (
+                {open ? (
                   <FolderOpen size={17} strokeWidth={1.8} />
                 ) : (
                   <Folder size={17} strokeWidth={1.8} />
                 )}
                 {isEditing ? editInput : <span className="ws-name">{f.name}</span>}
               </div>
-              {f.open && <div className="ws-folder-body">{inside.map(renderWs)}</div>}
+              {open && <div className="ws-folder-body">{inside.map(renderWs)}</div>}
             </div>
           );
         })}
