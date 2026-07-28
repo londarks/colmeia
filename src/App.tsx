@@ -215,7 +215,7 @@ export default function App() {
       try {
         ws = await workspaceLoad(next);
       } catch (e) {
-        console.error("Erro ao carregar workflow pós-deleção!", e);
+        console.error("Erro ao carregar workspace pós-deleção!", e);
         return;
       }
       activeRef.current = next;
@@ -227,8 +227,10 @@ export default function App() {
     for (const id of ids) {
       try {
         idx = await workspaceDelete(id);
-      } catch(e) {
-        console.error(`Erro ao deletar workflow com id ${id}!`);
+      } catch (e) {
+        console.error(`Erro ao deletar workspace ${id}`, e);
+        // Atualiza a sidebar após a falha.
+        idx = await workspacesList().catch(() => idx);
         break; // Cancelar deleção dos próximos porque ocorreu um erro.
       }
     }

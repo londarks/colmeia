@@ -271,6 +271,9 @@ setMeta((m) => {
   };
 
   // Confirma remoção. `target` já traz ws diretos + pastas (cascata).
+  // Nunca deixa zero workspaces: se a seleção cobre todos os existentes,
+  // aborta sem tocar em metadados nem chamar o backend (App também tem essa
+  // guarda, mas o cleanup de `meta` teria rodado antes dela agir).
   const runDelete = async (target: DeleteTarget) => {
     const folderSet = new Set(target.folderIds);
     // Workspaces dentro das pastas removidas entram na cascata.
@@ -281,6 +284,7 @@ setMeta((m) => {
       })
       .map((w) => w.id);
     const allWs = Array.from(new Set([...target.wsIds, ...cascadeWs]));
+    if (allWs.length >= items.length) return; // não pode ficar sem workspace
     // Remove metadados locais dos ws e das pastas apagadas.
     setMeta((m) => {
       const ws = { ...m.ws };
