@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef } from "react";
 import {
   Handle,
   Position,
@@ -6,22 +6,23 @@ import {
   useReactFlow,
   type NodeProps,
 } from "@xyflow/react";
-import { Terminal } from "@xterm/xterm";
-import { FitAddon } from "@xterm/addon-fit";
-import { WebLinksAddon } from "@xterm/addon-web-links";
-import { X, Folder, ShieldCheck } from "lucide-react";
+import { X, Folder, ShieldCheck, Crown, Maximize2, Search } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { AGENTS, type AgentId } from "../lib/agents";
-import { ROLES, ROLE_MAP } from "../lib/roles";
-import { readXtermTheme } from "../lib/theme";
+import { roleById, useRoles } from "../lib/roles";
+import { markSeen } from "../lib/activity";
 import {
-  ptySpawn,
-  ptyWrite,
-  ptySubmit,
-  ptyResize,
-  ptyKill,
-  b64ToBytes,
-} from "../lib/pty";
+  acquireTerminal,
+  attachTerminal,
+  detachTerminal,
+  liftTerminal,
+  openSearch,
+  unliftTerminal,
+  useLiftedTerminal,
+  useSearchOpen,
+} from "../lib/terminalRegistry";
+import { ActivityIndicator, StatusPill } from "../components/TerminalBadges";
+import { TerminalSearchBar } from "../components/TerminalSearchBar";
 
 export interface TerminalNodeData {
   agent: AgentId;
@@ -30,18 +31,22 @@ export interface TerminalNodeData {
   waiting?: boolean;
   cwd?: string;
   autoApproveInCwd?: boolean;
+  /** Maestro: o backend dá permissões de orquestração a este agente. */
+  maestro?: boolean;
+  /** Muda para reiniciar o processo mantendo id/arestas (role assign, recruit --replace). */
+  restartKey?: number;
 }
 
 function TerminalNodeInner({ id, data, selected }: NodeProps) {
   const d = data as unknown as TerminalNodeData;
   const agent = AGENTS[d.agent];
-  const role = d.role ? ROLE_MAP[d.role] : undefined;
-  const termRef = useRef<HTMLDivElement>(null);
-  const [busy, setBusy] = useState(false);
-  const busyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const roles = useRoles();
+  const role = roleById(d.role) ?? roles.find((r) => r.id === d.role);
+  const slotRef = useRef<HTMLDivElement>(null);
   const { deleteElements, updateNodeData } = useReactFlow();
+  const lifted = useLiftedTerminal() === id;
+  const searching = useSearchOpen(id);
 
-  const status = d.waiting ? "waiting" : busy ? "working" : "idle";
   const cwdName = d.cwd ? d.cwd.split(/[\\/]/).filter(Boolean).pop() : undefined;
 
   // Abre o seletor de pasta; trocar a pasta reinicia o terminal nela.
@@ -58,125 +63,39 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
 
   const onRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const roleId = e.target.value;
-    updateNodeData(id, { role: roleId || undefined });
-    const r = roleId ? ROLE_MAP[roleId] : undefined;
-    // Briefa o agente com o papel (não faz sentido num shell puro).
-    if (r && d.agent !== "shell") {
-      ptySubmit(id, r.briefing).catch(() => {});
-    }
+    // O papel entra no boot do agente: trocar reinicia o processo (num shell
+    // puro o papel não faz diferença, então só atualiza o rótulo).
+    updateNodeData(
+      id,
+      d.agent === "shell"
+        ? { role: roleId || undefined }
+        : { role: roleId || undefined, restartKey: Date.now() },
+    );
   };
 
+  // O terminal vive no registry (sobrevive à troca de canvas): aqui só garantimos que ele
+  // existe e anexamos o elemento dele ao corpo do nó. Desmontar NÃO mata o processo.
   useEffect(() => {
-    if (!termRef.current) return;
-
-    const term = new Terminal({
-      fontFamily: "'Cascadia Code', Consolas, Menlo, monospace",
-      fontSize: 13,
-      lineHeight: 1.15,
-      theme: readXtermTheme(),
-      cursorBlink: true,
-      allowProposedApi: true,
-      scrollback: 5000,
+    const slot = slotRef.current;
+    if (!slot) return;
+    acquireTerminal(id, {
+      agent: d.agent,
+      cwd: d.cwd,
+      role: d.role,
+      restartKey: d.restartKey,
     });
-    const fit = new FitAddon();
-    term.loadAddon(fit);
-    term.loadAddon(new WebLinksAddon());
-    term.open(termRef.current);
-    try {
-      fit.fit();
-    } catch {
-      /* ignora fit antes do layout */
-    }
-
-    // Copiar (Ctrl+Shift+C) e colar (Ctrl+Shift+V) — o Ctrl+C continua sendo
-    // interrupção (SIGINT), como num terminal de verdade.
-    term.attachCustomKeyEventHandler((e) => {
-      if (e.type !== "keydown" || !e.ctrlKey || !e.shiftKey) return true;
-      const k = e.key.toLowerCase();
-      if (k === "c") {
-        const sel = term.getSelection();
-        if (sel) {
-          navigator.clipboard.writeText(sel).catch(() => {});
-          return false;
-        }
-      }
-      if (k === "v") {
-        navigator.clipboard
-          .readText()
-          .then((t) => {
-            if (t) ptyWrite(id, t).catch(() => {});
-          })
-          .catch(() => {});
-        return false;
-      }
-      // Ctrl+Shift+A: seleciona tudo e copia (útil quando o zoom atrapalha o mouse).
-      if (k === "a") {
-        term.selectAll();
-        const all = term.getSelection();
-        if (all) navigator.clipboard.writeText(all).catch(() => {});
-        return false;
-      }
-      return true;
-    });
-
-    const { command, args } = agent.resolve();
-    let exited = false;
-
-    ptySpawn(
-      { id, command, args, cwd: d.cwd, cols: term.cols || 80, rows: term.rows || 24 },
-      (msg) => {
-        if (msg.kind === "data") {
-          term.write(b64ToBytes(msg.b64));
-          setBusy(true);
-          clearTimeout(busyTimer.current);
-          busyTimer.current = setTimeout(() => setBusy(false), 1200);
-        } else {
-          exited = true;
-          term.write("\r\n\x1b[90m[processo encerrado]\x1b[0m\r\n");
-        }
-      },
-    ).catch((e) =>
-      term.write(`\r\n\x1b[31mFalha ao iniciar ${command}: ${e}\x1b[0m\r\n`),
-    );
-
-    const onData = term.onData((chunk) => {
-      if (!exited) ptyWrite(id, chunk).catch(() => {});
-    });
-    const onResize = term.onResize(({ cols, rows }) => {
-      ptyResize(id, cols, rows).catch(() => {});
-    });
-
-    const ro = new ResizeObserver(() => {
-      try {
-        fit.fit();
-      } catch {
-        /* noop */
-      }
-    });
-    ro.observe(termRef.current);
-
-    // Atualiza as cores quando o tema global muda.
-    const onThemeChange = () => {
-      term.options.theme = readXtermTheme();
-    };
-    window.addEventListener("colmeia:themechange", onThemeChange);
-
-    return () => {
-      window.removeEventListener("colmeia:themechange", onThemeChange);
-      clearTimeout(busyTimer.current);
-      ro.disconnect();
-      onData.dispose();
-      onResize.dispose();
-      ptyKill(id).catch(() => {});
-      term.dispose();
-    };
+    attachTerminal(id, slot, 0);
+    return () => detachTerminal(id, slot);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, d.cwd]);
+  }, [id, d.cwd, d.agent, d.restartKey]);
+
+  const toggleLift = () => (lifted ? unliftTerminal() : liftTerminal(id));
 
   return (
     <div
       className={`term-node ${selected ? "is-selected" : ""}`}
       style={{ ["--agent" as string]: agent.color } as React.CSSProperties}
+      onPointerDown={() => markSeen(id)}
     >
       <NodeResizer
         minWidth={320}
@@ -188,21 +107,20 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
       />
       <Handle type="target" position={Position.Left} className="term-handle" />
 
-      <div className="node-header">
-        <span
-          className={`dot status-${status}`}
-          title={
-            status === "waiting"
-              ? "Aguardando aprovação"
-              : status === "working"
-                ? "Trabalhando"
-                : "Ocioso"
-          }
-        />
+      <div
+        className="node-header"
+        onDoubleClick={(e) => {
+          if ((e.target as HTMLElement).closest("button, select, input")) return;
+          toggleLift();
+        }}
+        title="Duplo clique para expandir"
+      >
+        <ActivityIndicator id={id} waiting={d.waiting} />
         <span className="node-title">
           <agent.icon className="node-icon" size={13} strokeWidth={1.9} />
-          {d.title ?? agent.label}
+          <span className="node-title-text">{d.title ?? agent.label}</span>
         </span>
+        <StatusPill id={id} />
         <button
           className={`cwd-btn nodrag ${d.cwd ? "has-cwd" : ""}`}
           onClick={pickFolder}
@@ -229,8 +147,23 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
             <ShieldCheck size={12} strokeWidth={2} />
           </button>
         )}
+        <button
+          className={`maestro-btn nodrag ${d.maestro ? "on" : ""}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            updateNodeData(id, { maestro: !d.maestro });
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          title={
+            d.maestro
+              ? "Maestro: pode orquestrar a equipe — clique para desligar"
+              : "Tornar maestro (permissões de orquestração)"
+          }
+        >
+          <Crown size={12} strokeWidth={2} />
+        </button>
         <select
-          className="role-select nodrag"
+          className={`role-select nodrag ${role ? "" : "is-empty"}`}
           value={d.role ?? ""}
           onChange={onRoleChange}
           onMouseDown={(e) => e.stopPropagation()}
@@ -246,12 +179,34 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
           }
         >
           {!d.role && <option value="">papel</option>}
-          {ROLES.map((r) => (
+          {roles.map((r) => (
             <option key={r.id} value={r.id}>
               {r.label}
             </option>
           ))}
         </select>
+        <button
+          className="node-icon-btn nodrag"
+          title="Buscar no terminal (Ctrl+F)"
+          onClick={(e) => {
+            e.stopPropagation();
+            openSearch(id);
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <Search size={12} strokeWidth={2} />
+        </button>
+        <button
+          className="node-icon-btn nodrag"
+          title="Expandir (duplo clique no cabeçalho · F11)"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleLift();
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <Maximize2 size={12} strokeWidth={2} />
+        </button>
         <button
           className="node-close nodrag"
           title="Fechar terminal"
@@ -264,7 +219,15 @@ function TerminalNodeInner({ id, data, selected }: NodeProps) {
         </button>
       </div>
 
-      <div ref={termRef} className="term-body nodrag nowheel" />
+      <div className="term-body-wrap">
+        <div ref={slotRef} className="term-body nodrag nowheel" />
+        {lifted && (
+          <div className="term-lifted-placeholder nodrag" onDoubleClick={unliftTerminal}>
+            Em destaque — Esc ou F11 para voltar
+          </div>
+        )}
+        {searching && !lifted && <TerminalSearchBar id={id} />}
+      </div>
 
       <Handle type="source" position={Position.Right} className="term-handle" />
     </div>

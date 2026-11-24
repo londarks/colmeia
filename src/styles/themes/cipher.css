@@ -1,0 +1,117 @@
+/* Portado do app "markdown" (apps/desktop/src/styles/themes/cipher.css). */
+/* Cipher — Dark developer workspace, cyber-minimalist (default theme) */
+@layer builtin-theme {
+  [data-theme="cipher"] {
+    /* Background layers */
+    --bg-sidebar: #08090c;
+    --bg-note-list: #0c0e13;
+    --bg-editor: #10131a;
+    --bg-hover: #1a1e28;
+    --bg-selected: #252a38;
+    --bg-input: #161922;
+    --bg-dropdown: #161922;
+    --bg-tooltip: #06070a;
+    --bg-modal: #0e1117;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.7);
+
+    /* Text */
+    --text-primary: #e6e9ef;
+    --text-secondary: #a8b0c0;
+    --text-muted: #6b7488;
+    --text-faint: #3d4458;
+    --text-inverse: #10131a;
+
+    /* Accent — neon green */
+    --accent: #23d18b;
+    --accent-hover: #3fe8a0;
+    --accent-muted: rgba(35, 209, 139, 0.15);
+    --accent-blue: #5ec8ff;
+    --accent-blue-hover: #7ed4ff;
+
+    /* Borders */
+    --border: #1d212c;
+    --border-subtle: #161922;
+    --border-focus: #23d18b;
+
+    /* Scrollbar */
+    --scrollbar: #252a38;
+    --scrollbar-hover: #3d4458;
+
+    /* Selection */
+    --selection: rgba(35, 209, 139, 0.22);
+    --selection-text: inherit;
+
+    /* Semantic */
+    --success: #23d18b;
+    --warning: #ffaf5c;
+    --error: #ff5e5e;
+    --info: #5ec8ff;
+
+    /* Syntax / Headings */
+    --heading-1: #5ec8ff;
+    --heading-2: #23d18b;
+    --heading-3: #ff8a4c;
+    --heading-4: #c099ff;
+    --code-bg: #161922;
+    --code-text: #cdd3df;
+    --link: #5ec8ff;
+    --link-hover: #7ed4ff;
+
+    /* Syntax highlighting */
+    --syntax-keyword: #c099ff;
+    --syntax-string: #23d18b;
+    --syntax-number: #ff8a4c;
+    --syntax-comment: #5a6275;
+    --syntax-function: #5ec8ff;
+    --syntax-type: #ffaf5c;
+    --syntax-property: #7ed4ff;
+    --syntax-operator: #23d18b;
+    --syntax-variable: #e6e9ef;
+
+    /* Editor specific */
+    --editor-line-active: rgba(35, 209, 139, 0.05);
+    --editor-cursor: #23d18b;
+    --editor-matching-bracket: rgba(35, 209, 139, 0.3);
+
+    /* Sidebar specific */
+    --sidebar-icon-notebook: #5ec8ff;
+    --sidebar-icon-tag: #23d18b;
+    --sidebar-icon-status: #ff8a4c;
+    --sidebar-icon-trash: #ff5e5e;
+
+    /* Note list specific */
+    --note-card-border: #1d212c;
+    --note-card-hover: #161922;
+    --note-card-selected: #252a38;
+    --note-excerpt: #7c8497;
+    --note-date: #6b7488;
+  }
+}
+
+/* colmeia — extensões do tema: terminal (ANSI), arestas, sombras e esquema de cor */
+@layer builtin-theme {
+  [data-theme="cipher"] {
+    color-scheme: dark;
+
+    /* Conexão "acesa" durante uma interação (contrasta com o --accent) */
+    --edge-active: #5ec8ff;
+
+    /* Paleta ANSI do terminal (xterm) */
+    --ansi-black: #252a38;
+    --ansi-red: #ff5e5e;
+    --ansi-green: #23d18b;
+    --ansi-yellow: #ffaf5c;
+    --ansi-blue: #5ec8ff;
+    --ansi-magenta: #c099ff;
+    --ansi-cyan: #56d4dd;
+    --ansi-white: #a8b0c0;
+    --ansi-bright-black: #6b7488;
+    --ansi-bright-red: #ff8080;
+    --ansi-bright-green: #3fe8a0;
+    --ansi-bright-yellow: #ffc887;
+    --ansi-bright-blue: #7ed4ff;
+    --ansi-bright-magenta: #d4b8ff;
+    --ansi-bright-cyan: #7fe7ef;
+    --ansi-bright-white: #e6e9ef;
+  }
+}

@@ -21,6 +21,8 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+keepawake = "0.5"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 portable-pty = "0.9"
@@ -29,3 +31,17 @@ tiny_http = "0.12"
 rand = "0.8"
 urlencoding = "2"
 ureq = { version = "2", features = ["json"] }
+# Horário local para rotinas daily/weekly (já está no Cargo.lock como dependência transitiva).
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+vt100 = "0.18"
+# Portal: CDP por WebSocket síncrono em ws://127.0.0.1 (sem TLS, sem tokio).
+tungstenite = { version = "0.24", default-features = false, features = ["handshake"] }
+
+# Job Object por terminal (matar a árvore de processos do agente). Já está no Cargo.lock.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_System_JobObjects",
+  "Win32_System_Threading",
+] }

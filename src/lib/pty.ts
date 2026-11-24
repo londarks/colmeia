@@ -13,6 +13,12 @@ export interface SpawnOptions {
   cwd?: string;
   cols: number;
   rows: number;
+  /** Id do papel: entra uma vez no boot do agente (não a cada ask). */
+  role?: string;
+  /** Tipo de agente do catálogo (claude/codex/ollama/shell). */
+  agent?: string;
+  /** Chave estável da conversa do nó (o backend deriva o --session-id/--resume do Claude). */
+  sessionKey?: string;
 }
 
 /** Sobe um PTY no backend e devolve um canal com a saída em streaming. */
@@ -29,6 +35,9 @@ export async function ptySpawn(
     cwd: opts.cwd ?? null,
     cols: opts.cols,
     rows: opts.rows,
+    role: opts.role ?? null,
+    agent: opts.agent ?? null,
+    sessionKey: opts.sessionKey ?? null,
     channel,
   });
 }
@@ -54,11 +63,22 @@ export interface GraphNode {
   id: string;
   type: string;
   title: string;
+  /** Rótulo do papel (exibição). */
   role?: string;
-  roleBriefing?: string;
+  /** Id do papel (lógica: "orquestrador" dá privilégio de maestro). */
+  roleId?: string;
+  agent?: string;
   content?: string;
   cwd?: string;
   autoApproveInCwd?: boolean;
+  /** Modo Maestro do nó (recrutar/dispensar/conectar fora do alcance). */
+  maestro?: boolean;
+  /** Nota travada: agentes leem, mas não escrevem. */
+  locked?: boolean;
+  /** Id do grupo pai (`parentId`), vazio se for de topo. */
+  parent?: string;
+  /** Grupo marcado como band (todos-com-todos). */
+  band?: boolean;
 }
 export interface GraphEdge {
   source: string;
@@ -70,25 +90,111 @@ export function setGraph(nodes: GraphNode[], edges: GraphEdge[]): Promise<void> 
   return invoke("set_graph", { nodes, edges });
 }
 
+export interface PresetInfo {
+  id: string;
+  label: string;
+  command: string;
+}
+
+/** Envia o catálogo de agentes ao backend (`colmeia preset list` / `recruit --agent`). */
+export function setPresets(presets: PresetInfo[]): Promise<void> {
+  return invoke("set_presets", { presets });
+}
+
+export interface RoleDef {
+  id: string;
+  label: string;
+  color: string;
+  prompt: string;
+  builtin: boolean;
+}
+
+/** Papéis do backend (built-ins + criados pelo usuário/agentes). */
+export function rolesList(): Promise<RoleDef[]> {
+  return invoke("roles_list");
+}
+
+// ---------------------------------------------------------------- Rotinas
+
+export type RoutineSchedule =
+  | { kind: "once"; at: number }
+  | { kind: "interval"; secs: number }
+  | { kind: "daily"; hour: number; minute: number }
+  | { kind: "weekly"; days: number[]; hour: number; minute: number };
+
+export interface RoutineHistoryEntry {
+  at: number;
+  /** sent | reminder | skippedBusy | targetMissing */
+  outcome: string;
+  detail: string;
+  manual: boolean;
+}
+
 export interface RoutineInfo {
   id: string;
-  target: string;
-  interval: number;
-  command: string;
+  name: string;
+  schedule: RoutineSchedule;
+  /** Id do nó alvo; vazio = lembrete (só notificação). */
+  targetId: string;
+  targetTitle: string;
+  text: string;
+  enabled: boolean;
+  skipIfBusy: boolean;
+  notify: boolean;
+  maxRuns: number | null;
+  createdAt: number;
+  lastFiredAt: number | null;
+  fireCount: number;
+  completed: boolean;
+  history: RoutineHistoryEntry[];
+  /** Calculados pelo backend. */
+  nextRun: number | null;
+  spec: string;
+  describe: string;
+  waitingBusy: boolean;
+}
+
+export interface RoutineInput {
+  name?: string;
+  /** "daily 09:00" | "weekly mon,fri@09:00" | "interval 30m" | "once 2026-06-20 15:00" */
+  schedule: string;
+  /** Id do nó alvo; vazio/undefined = lembrete. */
+  target?: string;
+  text: string;
+  skipIfBusy?: boolean;
+  notify?: boolean;
+  enabled?: boolean;
+  maxRuns?: number;
+}
+
+export type RoutinePatch = Partial<RoutineInput>;
+
+export interface SchedulePreview {
+  spec: string;
+  describe: string;
+  nextRun: number | null;
 }
 
 export function routinesList(): Promise<RoutineInfo[]> {
   return invoke("routines_list");
 }
-export function routineCreate(
-  target: string,
-  interval: number,
-  command: string,
-): Promise<RoutineInfo[]> {
-  return invoke("routine_create", { target, interval, command });
+export function routineCreate(input: RoutineInput): Promise<RoutineInfo[]> {
+  return invoke("routine_create", { input });
+}
+export function routineEdit(id: string, patch: RoutinePatch): Promise<RoutineInfo[]> {
+  return invoke("routine_edit", { id, patch });
 }
 export function routineDelete(id: string): Promise<RoutineInfo[]> {
   return invoke("routine_delete", { id });
+}
+export function routineSetEnabled(id: string, enabled: boolean): Promise<RoutineInfo[]> {
+  return invoke("routine_set_enabled", { id, enabled });
+}
+export function routineRun(id: string): Promise<RoutineInfo[]> {
+  return invoke("routine_run", { id });
+}
+export function routinePreview(schedule: string): Promise<SchedulePreview> {
+  return invoke("routine_preview", { schedule });
 }
 
 export interface ApprovalRequest {
@@ -115,6 +221,8 @@ export interface WorkspaceData {
   nodes: unknown[];
   edges: unknown[];
   strokes?: unknown[];
+  /** Câmera salva do canvas (x, y, zoom do React Flow). */
+  viewport?: { x: number; y: number; zoom: number };
 }
 export interface WorkspaceMeta {
   id: string;
@@ -151,6 +259,11 @@ export function workspaceSetActive(id: string): Promise<void> {
 /** Pede ao Ombro (Ollama local) uma análise dos agentes + próximo passo. */
 export function ombroAnalyze(model?: string): Promise<string> {
   return invoke("ombro_analyze", { model: model || null });
+}
+
+/** Impede (on) ou libera (off) a suspensão do sistema enquanto agentes trabalham. */
+export function keepAwake(on: boolean): Promise<void> {
+  return invoke("keep_awake", { on });
 }
 
 /** Decodifica um chunk base64 vindo do PTY em bytes crus para o xterm. */

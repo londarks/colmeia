@@ -11,6 +11,8 @@ import {
   Timer,
   Layers,
   Eye,
+  Music,
+  MessageSquarePlus,
 } from "lucide-react";
 import { AGENT_LIST, type AgentId } from "../lib/agents";
 import type { DrawTool } from "./DrawLayer";
@@ -33,6 +35,12 @@ interface Props {
   setShowFloors: (f: (v: boolean) => boolean) => void;
   showOmbro: boolean;
   setShowOmbro: (f: (v: boolean) => boolean) => void;
+  /** Painel de partituras (opcional, para não quebrar outras integrações). */
+  showPartituras?: boolean;
+  onTogglePartituras?: () => void;
+  /** Composer com @menções (opcional). */
+  showComposer?: boolean;
+  onToggleComposer?: () => void;
 }
 
 export function Toolbar({
@@ -51,6 +59,10 @@ export function Toolbar({
   setShowFloors,
   showOmbro,
   setShowOmbro,
+  showPartituras,
+  onTogglePartituras,
+  showComposer,
+  onToggleComposer,
 }: Props) {
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [drawOpen, setDrawOpen] = useState(false);
@@ -139,6 +151,24 @@ export function Toolbar({
         >
           <Eye size={17} strokeWidth={1.9} />
         </button>
+        {onTogglePartituras && (
+          <button
+            className={`tool-item ${showPartituras ? "on" : ""}`}
+            title="Partituras (templates de equipe)"
+            onClick={onTogglePartituras}
+          >
+            <Music size={17} strokeWidth={1.9} />
+          </button>
+        )}
+        {onToggleComposer && (
+          <button
+            className={`tool-item ${showComposer ? "on" : ""}`}
+            title="Composer: escrever para agentes com @menções (Ctrl+Enter)"
+            onClick={onToggleComposer}
+          >
+            <MessageSquarePlus size={17} strokeWidth={1.9} />
+          </button>
+        )}
       </div>
 
       {drawOpen && (

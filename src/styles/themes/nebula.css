@@ -1,0 +1,117 @@
+/* Portado do app "markdown" (apps/desktop/src/styles/themes/nebula.css). */
+/* Nebula — Deep space blue with teal-green accents */
+@layer builtin-theme {
+  [data-theme="nebula"] {
+    /* Background layers */
+    --bg-sidebar: #0b1520;
+    --bg-note-list: #0f1923;
+    --bg-editor: #111d28;
+    --bg-hover: #162535;
+    --bg-selected: #1a2e40;
+    --bg-input: #0c1620;
+    --bg-dropdown: #0e1a26;
+    --bg-tooltip: #091218;
+    --bg-modal: #0f1923;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.7);
+
+    /* Text */
+    --text-primary: #d0dce8;
+    --text-secondary: #7a94a8;
+    --text-muted: #4a6272;
+    --text-faint: #2e4452;
+    --text-inverse: #0b1520;
+
+    /* Accent — teal green */
+    --accent: #00c896;
+    --accent-hover: #22daa8;
+    --accent-muted: rgba(0, 200, 150, 0.12);
+    --accent-blue: #3d9eff;
+    --accent-blue-hover: #5db3ff;
+
+    /* Borders */
+    --border: #162535;
+    --border-subtle: #12202e;
+    --border-focus: #00c896;
+
+    /* Scrollbar */
+    --scrollbar: #1a2e40;
+    --scrollbar-hover: #254055;
+
+    /* Selection */
+    --selection: rgba(0, 200, 150, 0.2);
+    --selection-text: inherit;
+
+    /* Semantic */
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --error: #f87171;
+    --info: #60a5fa;
+
+    /* Syntax / Headings */
+    --heading-1: #3d9eff;
+    --heading-2: #00c896;
+    --heading-3: #a78bfa;
+    --heading-4: #f0a0c0;
+    --code-bg: #091520;
+    --code-text: #b0c8d8;
+    --link: #3d9eff;
+    --link-hover: #5db3ff;
+
+    /* Syntax highlighting */
+    --syntax-keyword: #c792ea;
+    --syntax-string: #7ec699;
+    --syntax-number: #f78c6c;
+    --syntax-comment: #3e5565;
+    --syntax-function: #82aaff;
+    --syntax-type: #ffcb6b;
+    --syntax-property: #3d9eff;
+    --syntax-operator: #89ddff;
+    --syntax-variable: #d0dce8;
+
+    /* Editor specific */
+    --editor-line-active: rgba(0, 200, 150, 0.05);
+    --editor-cursor: #00c896;
+    --editor-matching-bracket: rgba(0, 200, 150, 0.25);
+
+    /* Sidebar specific */
+    --sidebar-icon-notebook: #00c896;
+    --sidebar-icon-tag: #3d9eff;
+    --sidebar-icon-status: #a78bfa;
+    --sidebar-icon-trash: #f87171;
+
+    /* Note list specific */
+    --note-card-border: #12202e;
+    --note-card-hover: #142430;
+    --note-card-selected: #1a2e40;
+    --note-excerpt: #5a7888;
+    --note-date: #3e5565;
+  }
+}
+
+/* colmeia — extensões do tema: terminal (ANSI), arestas, sombras e esquema de cor */
+@layer builtin-theme {
+  [data-theme="nebula"] {
+    color-scheme: dark;
+
+    /* Conexão "acesa" durante uma interação (contrasta com o --accent) */
+    --edge-active: #3d9eff;
+
+    /* Paleta ANSI do terminal (xterm) */
+    --ansi-black: #162535;
+    --ansi-red: #f87171;
+    --ansi-green: #4ade80;
+    --ansi-yellow: #fbbf24;
+    --ansi-blue: #3d9eff;
+    --ansi-magenta: #c792ea;
+    --ansi-cyan: #00c896;
+    --ansi-white: #7a94a8;
+    --ansi-bright-black: #4a6272;
+    --ansi-bright-red: #fca5a5;
+    --ansi-bright-green: #86efac;
+    --ansi-bright-yellow: #fcd34d;
+    --ansi-bright-blue: #5db3ff;
+    --ansi-bright-magenta: #d4b0f0;
+    --ansi-bright-cyan: #22daa8;
+    --ansi-bright-white: #d0dce8;
+  }
+}

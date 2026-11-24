@@ -1,0 +1,122 @@
+/* Portado do app "markdown" (apps/desktop/src/styles/themes/atom.css). */
+/* Atom One Dark — The classic code editor theme
+   Base: Warm dark gray (#282c34)
+   Accents: Vibrant blue, soft pastels
+   Aesthetic: Familiar, balanced, developer-friendly */
+@layer builtin-theme {
+  [data-theme="atom"] {
+    /* Backgrounds — the iconic One Dark base */
+    --bg-sidebar: #21252b;
+    --bg-note-list: #282c34;
+    --bg-editor: #2c313a;
+    --bg-hover: #3a3f4b;
+    --bg-selected: #3e4452;
+    --bg-input: #2c313a;
+    --bg-dropdown: #2c313a;
+    --bg-tooltip: #1e2127;
+    --bg-modal: #282c34;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.6);
+
+    /* Text — ABB2BF family */
+    --text-primary: #abb2bf;
+    --text-secondary: #9199a5;
+    --text-muted: #636d83;
+    --text-faint: #4b5263;
+    --text-inverse: #282c34;
+
+    /* Accent — Atom blue */
+    --accent: #61afef;
+    --accent-hover: #78bdf2;
+    --accent-muted: rgba(97, 175, 239, 0.12);
+    --accent-blue: #61afef;
+    --accent-blue-hover: #78bdf2;
+
+    /* Borders */
+    --border: #3a3f4b;
+    --border-subtle: #333842;
+    --border-focus: #61afef;
+
+    /* Scrollbar */
+    --scrollbar: #3e4452;
+    --scrollbar-hover: #4b5263;
+
+    /* Selection */
+    --selection: rgba(97, 175, 239, 0.22);
+    --selection-text: inherit;
+
+    /* Status */
+
+    /* Semantic */
+    --success: #98c379;
+    --warning: #e5c07b;
+    --error: #e06c75;
+    --info: #61afef;
+
+    /* Headings */
+    --heading-1: #e06c75;
+    --heading-2: #c678dd;
+    --heading-3: #56b6c2;
+    --heading-4: #e5c07b;
+    --code-bg: #2c313a;
+    --code-text: #abb2bf;
+    --link: #61afef;
+    --link-hover: #78bdf2;
+
+    /* Syntax highlighting — the iconic One Dark palette */
+    --syntax-keyword: #c678dd;
+    --syntax-string: #98c379;
+    --syntax-number: #d19a66;
+    --syntax-comment: #5c6370;
+    --syntax-function: #61afef;
+    --syntax-type: #e5c07b;
+    --syntax-property: #e06c75;
+    --syntax-operator: #56b6c2;
+    --syntax-variable: #abb2bf;
+
+    /* Editor */
+    --editor-line-active: rgba(97, 175, 239, 0.05);
+    --editor-cursor: #528bff;
+    --editor-matching-bracket: rgba(97, 175, 239, 0.25);
+
+    /* Sidebar icons */
+    --sidebar-icon-notebook: #61afef;
+    --sidebar-icon-tag: #56b6c2;
+    --sidebar-icon-status: #98c379;
+    --sidebar-icon-trash: #e06c75;
+
+    /* Note list */
+    --note-card-border: #333842;
+    --note-card-hover: #2c313a;
+    --note-card-selected: #3a3f4b;
+    --note-excerpt: #636d83;
+    --note-date: #4b5263;
+  }
+}
+
+/* colmeia — extensões do tema: terminal (ANSI), arestas, sombras e esquema de cor */
+@layer builtin-theme {
+  [data-theme="atom"] {
+    color-scheme: dark;
+
+    /* Conexão "acesa" durante uma interação (contrasta com o --accent) */
+    --edge-active: #98c379;
+
+    /* Paleta ANSI do terminal (xterm) */
+    --ansi-black: #282c34;
+    --ansi-red: #e06c75;
+    --ansi-green: #98c379;
+    --ansi-yellow: #e5c07b;
+    --ansi-blue: #61afef;
+    --ansi-magenta: #c678dd;
+    --ansi-cyan: #56b6c2;
+    --ansi-white: #abb2bf;
+    --ansi-bright-black: #5c6370;
+    --ansi-bright-red: #e06c75;
+    --ansi-bright-green: #98c379;
+    --ansi-bright-yellow: #e5c07b;
+    --ansi-bright-blue: #61afef;
+    --ansi-bright-magenta: #c678dd;
+    --ansi-bright-cyan: #56b6c2;
+    --ansi-bright-white: #ffffff;
+  }
+}

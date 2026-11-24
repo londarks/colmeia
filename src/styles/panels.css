@@ -1,0 +1,596 @@
+/* ==========================================================================
+   Painéis laterais flutuantes (Rotinas, Floors, Ombro, Partituras) e o painel
+   de aprovações. Estrutura do PickerModal do markdown: cabeçalho com ícone em
+   acento, corpo com formulário denso, lista de cartões finos.
+   ========================================================================== */
+
+.routines-panel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+  max-height: calc(100% - 24px);
+  overflow: hidden;
+  font-size: var(--fs-sm);
+  animation: panelIn 0.2s var(--ease-out);
+}
+.partituras-panel {
+  width: 380px;
+}
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: none;
+  padding: 10px 10px 10px 14px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.panel-header b {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--fs-base);
+  font-weight: 600;
+}
+.panel-header b svg {
+  flex: none;
+  color: var(--accent);
+}
+.floor-header-actions,
+.pt-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.panel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: none;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.form-row .unit {
+  flex: none;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.command-input {
+  flex: 1;
+  min-width: 0;
+}
+.panel-hint {
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.panel-hint code {
+  padding: 0 4px;
+  font-size: 0.95em;
+  color: var(--code-text);
+  background: var(--code-bg);
+  border-radius: var(--radius-xs);
+}
+.panel-error {
+  padding: 6px 8px;
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
+  border-radius: var(--radius);
+}
+.panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  padding: 8px;
+  overflow-y: auto;
+}
+.panel-empty {
+  padding: 18px 12px;
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+/* ---- Cartão de item (rotina / floor) ---- */
+.routine-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 8px 10px;
+  background: var(--bg-editor);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition: border-color var(--t-fast);
+}
+.routine-item:hover {
+  border-color: var(--border);
+}
+.routine-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.routine-target {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.routine-interval {
+  --pill: var(--accent);
+}
+.routine-cmd {
+  grid-column: 1 / 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  color: var(--code-text);
+}
+.routine-del {
+  grid-row: 1 / 3;
+  grid-column: 2;
+  align-self: center;
+  width: 24px;
+  height: 24px;
+}
+
+/* Rotinas: cartão em coluna + agenda */
+.routine-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.routine-card.off {
+  opacity: 0.55;
+}
+.routine-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.routine-day {
+  padding: 2px 7px;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.routine-day:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.routine-day.on {
+  color: var(--accent);
+  background: var(--accent-muted);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.routine-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ---- Floors ---- */
+.repo-pick {
+  justify-content: flex-start;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  text-align: left;
+}
+.floor-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.floor-main {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.floor-main.floor-warn {
+  --pill: var(--warning);
+}
+.floor-main.floor-bad {
+  --pill: var(--error);
+}
+.floor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.floor-btn {
+  padding: 4px 8px;
+  font-size: var(--fs-xs);
+}
+.floor-assign {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-muted);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: var(--radius-md);
+  transition: background var(--t-fast);
+}
+.floor-assign:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+.floor-assign:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.routine-del.floor-del {
+  grid-row: auto;
+  grid-column: auto;
+  margin-left: auto;
+}
+.floor-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+.floor-status b {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.floor-status-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.floor-dot {
+  --dot: var(--info);
+}
+.floor-status[data-state="blocked"] .floor-dot {
+  --dot: var(--error);
+}
+.floor-status[data-state="review"] .floor-dot {
+  --dot: var(--warning);
+}
+.floor-status[data-state="done"] .floor-dot {
+  --dot: var(--success);
+}
+.floor-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.floor-detail input:not([type="checkbox"]):not([type="radio"]),
+.floor-detail select {
+  background: var(--bg-input);
+}
+.floor-list-mini {
+  max-height: 140px;
+  margin: 0;
+  padding: 0 0 0 14px;
+  overflow-y: auto;
+  word-break: break-all;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.floor-list-mini.floor-bad {
+  color: var(--error);
+}
+
+/* ---- Ombro ---- */
+.ombro-result {
+  padding: 4px 6px 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: var(--fs-base);
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+/* ---- Partituras ---- */
+.pt-error {
+  margin: 8px 14px 0;
+}
+.pt-card {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 10px;
+  padding: 8px;
+  background: var(--bg-editor);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition: border-color var(--t-fast);
+}
+.pt-card:hover {
+  border-color: var(--border);
+}
+.pt-preview {
+  width: 96px;
+  height: 72px;
+  background: var(--bg-note-list);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+.pt-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.pt-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.pt-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+.pt-counts {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
+.pt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.pt-btn {
+  padding: 3px 8px;
+  font-size: var(--fs-xs);
+}
+.pt-review {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 60%;
+  padding: 12px 14px;
+  overflow-y: auto;
+  background: color-mix(in srgb, var(--warning) 6%, transparent);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.pt-review-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--fs-base);
+  color: var(--warning);
+}
+.pt-review-title b {
+  color: var(--text-primary);
+}
+.pt-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pt-review-list li {
+  padding: 6px 8px;
+  background: var(--bg-editor);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+.pt-review-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+}
+.pt-cmd {
+  display: block;
+  margin-top: 3px;
+  word-break: break-all;
+  font-size: var(--fs-xs);
+  color: var(--warning);
+}
+.pt-warnings {
+  margin: 0;
+  padding-left: 16px;
+  font-size: var(--fs-xs);
+  color: var(--warning);
+}
+.pt-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* ========================= Aprovações pendentes ========================= */
+.approvals {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  width: 460px;
+  max-width: calc(100% - 32px);
+  max-height: 62%;
+  overflow: hidden;
+  transform: translateX(-50%);
+  border-color: color-mix(in srgb, var(--warning) 45%, var(--border));
+  border-top: 2px solid var(--warning);
+  animation: approvalsIn 0.22s var(--ease-out);
+}
+@keyframes approvalsIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+.approvals-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding: 10px 14px;
+  font-size: var(--fs-base);
+  color: var(--warning);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.approvals-header b {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.approvals-count {
+  --pill: var(--warning);
+  margin-left: auto;
+  font-weight: 700;
+}
+.approvals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  overflow-y: auto;
+}
+.approval-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-editor);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.approval-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.approval-agent {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.approval-tool {
+  --pill: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.approval-summary {
+  display: block;
+  max-height: 96px;
+  padding: 7px 9px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--code-text);
+  background: var(--code-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+.approval-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.approve-btn {
+  --tone: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
+  border-radius: var(--radius-md);
+  transition: background var(--t-fast);
+}
+.approve-btn:hover {
+  background: color-mix(in srgb, var(--tone) 24%, transparent);
+}
+.approve-btn.allow {
+  --tone: var(--success);
+}
+.approve-btn.deny {
+  --tone: var(--error);
+}
+.approve-btn.always {
+  --tone: var(--info);
+}

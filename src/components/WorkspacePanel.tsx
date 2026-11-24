@@ -405,7 +405,10 @@ setMeta((m) => {
   return (
     <div className="ws-tree">
       <div className="ws-head">
-        <div className="side-label">Workspaces</div>
+        <div className="side-label">
+          Workspaces
+          <span className="side-count">{items.length}</span>
+        </div>
         <button className="ws-add" onClick={onCreate}>
           <Plus size={17} strokeWidth={2} />
           <span>Novo workspace</span>
@@ -489,6 +492,7 @@ setMeta((m) => {
                   <Folder size={17} strokeWidth={1.8} />
                 )}
                 {isEditing ? editInput : <span className="ws-name">{f.name}</span>}
+                {!isEditing && <span className="ws-count">{inside.length}</span>}
               </div>
               {open && <div className="ws-folder-body">{inside.map(renderWs)}</div>}
             </div>

@@ -1,0 +1,122 @@
+/* Portado do app "markdown" (apps/desktop/src/styles/themes/obsidian.css). */
+/* Obsidian — Volcanic stone, dark and refined
+   Base: Near-black with cool gray undertone
+   Accents: Soft violet, muted cyan
+   Aesthetic: Minimal, sharp, premium */
+@layer builtin-theme {
+  [data-theme="obsidian"] {
+    /* Backgrounds — volcanic dark */
+    --bg-sidebar: #141418;
+    --bg-note-list: #1a1a1f;
+    --bg-editor: #1f1f25;
+    --bg-hover: #2a2a32;
+    --bg-selected: #33333e;
+    --bg-input: #1c1c22;
+    --bg-dropdown: #1c1c22;
+    --bg-tooltip: #101014;
+    --bg-modal: #1a1a1f;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.65);
+
+    /* Text — cool silver */
+    --text-primary: #e2e4ea;
+    --text-secondary: #a0a4b0;
+    --text-muted: #62666e;
+    --text-faint: #44464e;
+    --text-inverse: #141418;
+
+    /* Accent — soft violet */
+    --accent: #9580e6;
+    --accent-hover: #aa98f0;
+    --accent-muted: rgba(149, 128, 230, 0.12);
+    --accent-blue: #68b0d0;
+    --accent-blue-hover: #7ec0de;
+
+    /* Borders — razor thin */
+    --border: #2a2a32;
+    --border-subtle: #222228;
+    --border-focus: #9580e6;
+
+    /* Scrollbar */
+    --scrollbar: #33333e;
+    --scrollbar-hover: #44464e;
+
+    /* Selection */
+    --selection: rgba(149, 128, 230, 0.22);
+    --selection-text: inherit;
+
+    /* Status */
+
+    /* Semantic */
+    --success: #6cc08a;
+    --warning: #e0b05e;
+    --error: #d06060;
+    --info: #68b0d0;
+
+    /* Headings */
+    --heading-1: #9580e6;
+    --heading-2: #68b0d0;
+    --heading-3: #6cc08a;
+    --heading-4: #e0b05e;
+    --code-bg: #181820;
+    --code-text: #c8cad0;
+    --link: #68b0d0;
+    --link-hover: #7ec0de;
+
+    /* Syntax highlighting — clean, muted */
+    --syntax-keyword: #9580e6;
+    --syntax-string: #6cc08a;
+    --syntax-number: #e0b05e;
+    --syntax-comment: #555860;
+    --syntax-function: #68b0d0;
+    --syntax-type: #e0b05e;
+    --syntax-property: #aa98f0;
+    --syntax-operator: #a0a4b0;
+    --syntax-variable: #e2e4ea;
+
+    /* Editor */
+    --editor-line-active: rgba(149, 128, 230, 0.05);
+    --editor-cursor: #9580e6;
+    --editor-matching-bracket: rgba(149, 128, 230, 0.25);
+
+    /* Sidebar icons */
+    --sidebar-icon-notebook: #9580e6;
+    --sidebar-icon-tag: #68b0d0;
+    --sidebar-icon-status: #6cc08a;
+    --sidebar-icon-trash: #d06060;
+
+    /* Note list */
+    --note-card-border: #222228;
+    --note-card-hover: #222230;
+    --note-card-selected: #2a2a32;
+    --note-excerpt: #62666e;
+    --note-date: #555860;
+  }
+}
+
+/* colmeia — extensões do tema: terminal (ANSI), arestas, sombras e esquema de cor */
+@layer builtin-theme {
+  [data-theme="obsidian"] {
+    color-scheme: dark;
+
+    /* Conexão "acesa" durante uma interação (contrasta com o --accent) */
+    --edge-active: #68b0d0;
+
+    /* Paleta ANSI do terminal (xterm) */
+    --ansi-black: #2a2a32;
+    --ansi-red: #d06060;
+    --ansi-green: #6cc08a;
+    --ansi-yellow: #e0b05e;
+    --ansi-blue: #68b0d0;
+    --ansi-magenta: #9580e6;
+    --ansi-cyan: #5fbfb5;
+    --ansi-white: #a0a4b0;
+    --ansi-bright-black: #62666e;
+    --ansi-bright-red: #e07a7a;
+    --ansi-bright-green: #86d0a0;
+    --ansi-bright-yellow: #ecc47c;
+    --ansi-bright-blue: #7ec0de;
+    --ansi-bright-magenta: #aa98f0;
+    --ansi-bright-cyan: #7fd0c8;
+    --ansi-bright-white: #e2e4ea;
+  }
+}

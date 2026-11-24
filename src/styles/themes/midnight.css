@@ -1,0 +1,119 @@
+/* Portado do app "markdown" (apps/desktop/src/styles/themes/midnight.css). */
+/* Midnight — Deep space dark inspired by the login ambient */
+@layer builtin-theme {
+  [data-theme="midnight"] {
+    /* Background layers */
+    --bg-sidebar: #0e0e1a;
+    --bg-note-list: #12121f;
+    --bg-editor: #141422;
+    --bg-hover: #1c1c30;
+    --bg-selected: #252540;
+    --bg-input: #101020;
+    --bg-dropdown: #151528;
+    --bg-tooltip: #0a0a14;
+    --bg-modal: #12121f;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.7);
+
+    /* Text */
+    --text-primary: #e0e0f0;
+    --text-secondary: #9090b0;
+    --text-muted: #555570;
+    --text-faint: #3a3a50;
+    --text-inverse: #0e0e1a;
+
+    /* Accent */
+    --accent: #7c6aef;
+    --accent-hover: #9b8df2;
+    --accent-muted: rgba(124, 106, 239, 0.12);
+    --accent-blue: #5b9cf5;
+    --accent-blue-hover: #7bb3f7;
+
+    /* Borders */
+    --border: #1e1e32;
+    --border-subtle: #1a1a2c;
+    --border-focus: #7c6aef;
+
+    /* Scrollbar */
+    --scrollbar: #2a2a42;
+    --scrollbar-hover: #3a3a55;
+
+    /* Selection */
+    --selection: rgba(124, 106, 239, 0.25);
+    --selection-text: inherit;
+
+    /* Status */
+
+    /* Semantic */
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --error: #f87171;
+    --info: #60a5fa;
+
+    /* Syntax / Headings */
+    --heading-1: #5b9cf5;
+    --heading-2: #7c6aef;
+    --heading-3: #4ecdc4;
+    --heading-4: #f0a0c0;
+    --code-bg: #0c0c18;
+    --code-text: #c0c0e0;
+    --link: #5b9cf5;
+    --link-hover: #7bb3f7;
+
+    /* Syntax highlighting */
+    --syntax-keyword: #c792ea;
+    --syntax-string: #c3e88d;
+    --syntax-number: #f78c6c;
+    --syntax-comment: #484868;
+    --syntax-function: #82aaff;
+    --syntax-type: #ffcb6b;
+    --syntax-property: #5b9cf5;
+    --syntax-operator: #89ddff;
+    --syntax-variable: #e0e0f0;
+
+    /* Editor specific */
+    --editor-line-active: rgba(124, 106, 239, 0.05);
+    --editor-cursor: #7c6aef;
+    --editor-matching-bracket: rgba(124, 106, 239, 0.25);
+
+    /* Sidebar specific */
+    --sidebar-icon-notebook: #7c6aef;
+    --sidebar-icon-tag: #5b9cf5;
+    --sidebar-icon-status: #4ecdc4;
+    --sidebar-icon-trash: #f87171;
+
+    /* Note list specific */
+    --note-card-border: #1a1a2c;
+    --note-card-hover: #181830;
+    --note-card-selected: #252540;
+    --note-excerpt: #6a6a8a;
+    --note-date: #505068;
+  }
+}
+
+/* colmeia — extensões do tema: terminal (ANSI), arestas, sombras e esquema de cor */
+@layer builtin-theme {
+  [data-theme="midnight"] {
+    color-scheme: dark;
+
+    /* Conexão "acesa" durante uma interação (contrasta com o --accent) */
+    --edge-active: #4ecdc4;
+
+    /* Paleta ANSI do terminal (xterm) */
+    --ansi-black: #1c1c30;
+    --ansi-red: #f87171;
+    --ansi-green: #4ade80;
+    --ansi-yellow: #fbbf24;
+    --ansi-blue: #5b9cf5;
+    --ansi-magenta: #c792ea;
+    --ansi-cyan: #4ecdc4;
+    --ansi-white: #9090b0;
+    --ansi-bright-black: #555570;
+    --ansi-bright-red: #fca5a5;
+    --ansi-bright-green: #86efac;
+    --ansi-bright-yellow: #fcd34d;
+    --ansi-bright-blue: #7bb3f7;
+    --ansi-bright-magenta: #d4b0f0;
+    --ansi-bright-cyan: #89ddff;
+    --ansi-bright-white: #e0e0f0;
+  }
+}

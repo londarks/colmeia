@@ -1,0 +1,96 @@
+/* Portado do app "markdown" (apps/desktop/src/styles/themes/gruvbox.css). */
+/* Gruvbox — Retro groove color scheme (ported from FrankMD) */
+@layer builtin-theme {
+  [data-theme="gruvbox"] {
+    --bg-sidebar: #1d2021;
+    --bg-note-list: #282828;
+    --bg-editor: #32302f;
+    --bg-hover: #504945;
+    --bg-selected: #665c54;
+    --bg-input: #3c3836;
+    --bg-dropdown: #3c3836;
+    --bg-tooltip: #1d2021;
+    --bg-modal: #282828;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.6);
+    --text-primary: #ebdbb2;
+    --text-secondary: #d5c4a1;
+    --text-muted: #a89984;
+    --text-faint: #928374;
+    --text-inverse: #282828;
+    --accent: #fe8019;
+    --accent-hover: #fabd2f;
+    --accent-muted: rgba(254, 128, 25, 0.15);
+    --accent-blue: #83a598;
+    --accent-blue-hover: #8ec07c;
+    --border: #504945;
+    --border-subtle: #3c3836;
+    --border-focus: #fe8019;
+    --scrollbar: #665c54;
+    --scrollbar-hover: #7c6f64;
+    --selection: rgba(214, 153, 39, 0.3);
+    --selection-text: inherit;
+    --success: #b8bb26;
+    --warning: #fe8019;
+    --error: #fb4934;
+    --info: #83a598;
+    --heading-1: #fabd2f;
+    --heading-2: #8ec07c;
+    --heading-3: #83a598;
+    --heading-4: #d3869b;
+    --code-bg: #3c3836;
+    --code-text: #ebdbb2;
+    --link: #83a598;
+    --link-hover: #8ec07c;
+    /* Syntax highlighting */
+    --syntax-keyword: #fb4934;
+    --syntax-string: #b8bb26;
+    --syntax-number: #d3869b;
+    --syntax-comment: #928374;
+    --syntax-function: #fabd2f;
+    --syntax-type: #8ec07c;
+    --syntax-property: #83a598;
+    --syntax-operator: #fe8019;
+    --syntax-variable: #ebdbb2;
+
+    --editor-line-active: rgba(254, 128, 25, 0.06);
+    --editor-cursor: #fe8019;
+    --editor-matching-bracket: rgba(254, 128, 25, 0.3);
+    --sidebar-icon-notebook: #fe8019;
+    --sidebar-icon-tag: #83a598;
+    --sidebar-icon-status: #b8bb26;
+    --sidebar-icon-trash: #fb4934;
+    --note-card-border: #504945;
+    --note-card-hover: #3c3836;
+    --note-card-selected: #504945;
+    --note-excerpt: #a89984;
+    --note-date: #928374;
+  }
+}
+
+/* colmeia — extensões do tema: terminal (ANSI), arestas, sombras e esquema de cor */
+@layer builtin-theme {
+  [data-theme="gruvbox"] {
+    color-scheme: dark;
+
+    /* Conexão "acesa" durante uma interação (contrasta com o --accent) */
+    --edge-active: #8ec07c;
+
+    /* Paleta ANSI do terminal (xterm) */
+    --ansi-black: #282828;
+    --ansi-red: #cc241d;
+    --ansi-green: #98971a;
+    --ansi-yellow: #d79921;
+    --ansi-blue: #458588;
+    --ansi-magenta: #b16286;
+    --ansi-cyan: #689d6a;
+    --ansi-white: #a89984;
+    --ansi-bright-black: #928374;
+    --ansi-bright-red: #fb4934;
+    --ansi-bright-green: #b8bb26;
+    --ansi-bright-yellow: #fabd2f;
+    --ansi-bright-blue: #83a598;
+    --ansi-bright-magenta: #d3869b;
+    --ansi-bright-cyan: #8ec07c;
+    --ansi-bright-white: #ebdbb2;
+  }
+}
