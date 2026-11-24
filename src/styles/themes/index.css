@@ -1,0 +1,136 @@
+/* ==========================================================================
+   Temas — portados do app "markdown" (apps/desktop/src/styles/themes).
+   Cada tema define o conjunto completo de tokens por [data-theme] no <html>;
+   o colmeia acrescenta, no fim de cada arquivo, a paleta ANSI do terminal,
+   a cor da aresta "acesa" e o esquema de cor.
+
+   Camadas (mesma estratégia do markdown): o que vem depois ganha,
+   independente de especificidade, e CSS fora de camada ganha de todas.
+     1. estilos do app (base/shell/nodes/panels/overlays) — sem camada,
+        nunca definem tokens de cor
+     2. builtin-theme — os temas
+     3. fallback      — valores de emergência, de propósito o mais fraco
+   ========================================================================== */
+@layer fallback, builtin-theme;
+
+@import "./cipher.css";
+@import "./midnight.css";
+@import "./tokyo-night.css";
+@import "./dracula.css";
+@import "./rose-pine.css";
+@import "./catppuccin.css";
+@import "./gruvbox.css";
+@import "./atom.css";
+@import "./obsidian.css";
+@import "./nebula.css";
+@import "./soft-light.css";
+@import "./solarized-light.css";
+@import "./twilight.css";
+
+/* Último recurso: se `data-theme` não casar com nenhum tema (valor antigo no
+   localStorage), o app não pode ficar sem cor. `:where()` zera a
+   especificidade e a camada `fallback` perde para qualquer tema. Os tokens
+   que nenhum tema precisa redefinir (sombras, alertas, ANSI, janela) moram
+   só aqui. */
+@layer fallback {
+  :where(:root) {
+    color-scheme: dark;
+
+    --bg-sidebar: #08090c;
+    --bg-note-list: #0c0e13;
+    --bg-editor: #10131a;
+    --bg-hover: #1a1e28;
+    --bg-selected: #252a38;
+    --bg-input: #161922;
+    --bg-dropdown: #161922;
+    --bg-tooltip: #06070a;
+    --bg-modal: #0e1117;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.7);
+    --text-primary: #e6e9ef;
+    --text-secondary: #a8b0c0;
+    --text-muted: #6b7488;
+    --text-faint: #3d4458;
+    --text-inverse: #10131a;
+    --accent: #23d18b;
+    --accent-hover: #3fe8a0;
+    --accent-muted: rgba(35, 209, 139, 0.15);
+    --accent-blue: #5ec8ff;
+    --accent-blue-hover: #7ed4ff;
+    --border: #1d212c;
+    --border-subtle: #161922;
+    --border-focus: #23d18b;
+    --scrollbar: #252a38;
+    --scrollbar-hover: #3d4458;
+    --selection: rgba(35, 209, 139, 0.22);
+    --selection-text: inherit;
+    --success: #23d18b;
+    --warning: #ffaf5c;
+    --error: #ff5e5e;
+    --info: #5ec8ff;
+    --heading-1: #5ec8ff;
+    --heading-2: #23d18b;
+    --heading-3: #ff8a4c;
+    --heading-4: #c099ff;
+    --code-bg: #161922;
+    --code-text: #cdd3df;
+    --link: #5ec8ff;
+    --link-hover: #7ed4ff;
+    --syntax-keyword: #c099ff;
+    --syntax-string: #23d18b;
+    --syntax-number: #ff8a4c;
+    --syntax-comment: #5a6275;
+    --syntax-function: #5ec8ff;
+    --syntax-type: #ffaf5c;
+    --syntax-property: #7ed4ff;
+    --syntax-operator: #23d18b;
+    --syntax-variable: #e6e9ef;
+    --editor-cursor: #23d18b;
+    --sidebar-icon-notebook: #5ec8ff;
+    --sidebar-icon-tag: #23d18b;
+    --sidebar-icon-status: #ff8a4c;
+    --sidebar-icon-trash: #ff5e5e;
+
+    /* Texto sobre preenchimento saturado (botão primário, perigo). */
+    --text-on-accent: var(--text-inverse);
+
+    /* Conexão "acesa" durante uma interação. */
+    --edge-active: #5ec8ff;
+
+    /* Elevação (os temas claros suavizam). */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 24px -4px rgba(0, 0, 0, 0.4), 0 8px 32px -8px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 24px 80px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.03);
+    --shadow-node: 0 10px 30px -10px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.25);
+    --minimap-mask: rgba(0, 0, 0, 0.5);
+
+    /* Botão fechar da janela (padrão do Windows, igual ao markdown). */
+    --window-close: #e81123;
+    --window-close-text: #ffffff;
+
+    /* Alertas no estilo GitHub (notas em markdown). */
+    --alert-note: #4493f8;
+    --alert-tip: #3fb950;
+    --alert-important: #ab7df8;
+    --alert-warning: #d29922;
+    --alert-caution: #f85149;
+    --task-done: #3fb950;
+
+    /* Paleta ANSI padrão do terminal. */
+    --ansi-black: #252a38;
+    --ansi-red: #ff5e5e;
+    --ansi-green: #23d18b;
+    --ansi-yellow: #ffaf5c;
+    --ansi-blue: #5ec8ff;
+    --ansi-magenta: #c099ff;
+    --ansi-cyan: #56d4dd;
+    --ansi-white: #a8b0c0;
+    --ansi-bright-black: #6b7488;
+    --ansi-bright-red: #ff8080;
+    --ansi-bright-green: #3fe8a0;
+    --ansi-bright-yellow: #ffc887;
+    --ansi-bright-blue: #7ed4ff;
+    --ansi-bright-magenta: #d4b8ff;
+    --ansi-bright-cyan: #7fe7ef;
+    --ansi-bright-white: #e6e9ef;
+  }
+}

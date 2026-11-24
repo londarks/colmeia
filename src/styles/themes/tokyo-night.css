@@ -1,0 +1,96 @@
+/* Portado do app "markdown" (apps/desktop/src/styles/themes/tokyo-night.css). */
+/* Tokyo Night — Futuristic city lights (ported from FrankMD) */
+@layer builtin-theme {
+  [data-theme="tokyo-night"] {
+    --bg-sidebar: #16161e;
+    --bg-note-list: #1a1b26;
+    --bg-editor: #1f2030;
+    --bg-hover: #343a52;
+    --bg-selected: #414868;
+    --bg-input: #24283b;
+    --bg-dropdown: #24283b;
+    --bg-tooltip: #16161e;
+    --bg-modal: #1a1b26;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.6);
+    --text-primary: #c0caf5;
+    --text-secondary: #a9b1d6;
+    --text-muted: #565f89;
+    --text-faint: #414868;
+    --text-inverse: #1a1b26;
+    --accent: #7aa2f7;
+    --accent-hover: #89b4fa;
+    --accent-muted: rgba(122, 162, 247, 0.15);
+    --accent-blue: #7dcfff;
+    --accent-blue-hover: #89d4ff;
+    --border: #343a52;
+    --border-subtle: #292e42;
+    --border-focus: #7aa2f7;
+    --scrollbar: #414868;
+    --scrollbar-hover: #565f89;
+    --selection: rgba(122, 162, 247, 0.3);
+    --selection-text: inherit;
+    --success: #9ece6a;
+    --warning: #e0af68;
+    --error: #f7768e;
+    --info: #7aa2f7;
+    --heading-1: #bb9af7;
+    --heading-2: #7dcfff;
+    --heading-3: #73daca;
+    --heading-4: #ff9e64;
+    --code-bg: #24283b;
+    --code-text: #c0caf5;
+    --link: #7aa2f7;
+    --link-hover: #89b4fa;
+    /* Syntax highlighting */
+    --syntax-keyword: #bb9af7;
+    --syntax-string: #9ece6a;
+    --syntax-number: #ff9e64;
+    --syntax-comment: #565f89;
+    --syntax-function: #7aa2f7;
+    --syntax-type: #2ac3de;
+    --syntax-property: #73daca;
+    --syntax-operator: #89ddff;
+    --syntax-variable: #c0caf5;
+
+    --editor-line-active: rgba(122, 162, 247, 0.06);
+    --editor-cursor: #c0caf5;
+    --editor-matching-bracket: rgba(122, 162, 247, 0.3);
+    --sidebar-icon-notebook: #bb9af7;
+    --sidebar-icon-tag: #7dcfff;
+    --sidebar-icon-status: #9ece6a;
+    --sidebar-icon-trash: #f7768e;
+    --note-card-border: #343a52;
+    --note-card-hover: #24283b;
+    --note-card-selected: #343a52;
+    --note-excerpt: #565f89;
+    --note-date: #414868;
+  }
+}
+
+/* colmeia — extensões do tema: terminal (ANSI), arestas, sombras e esquema de cor */
+@layer builtin-theme {
+  [data-theme="tokyo-night"] {
+    color-scheme: dark;
+
+    /* Conexão "acesa" durante uma interação (contrasta com o --accent) */
+    --edge-active: #9ece6a;
+
+    /* Paleta ANSI do terminal (xterm) */
+    --ansi-black: #15161e;
+    --ansi-red: #f7768e;
+    --ansi-green: #9ece6a;
+    --ansi-yellow: #e0af68;
+    --ansi-blue: #7aa2f7;
+    --ansi-magenta: #bb9af7;
+    --ansi-cyan: #7dcfff;
+    --ansi-white: #a9b1d6;
+    --ansi-bright-black: #414868;
+    --ansi-bright-red: #f7768e;
+    --ansi-bright-green: #9ece6a;
+    --ansi-bright-yellow: #e0af68;
+    --ansi-bright-blue: #7aa2f7;
+    --ansi-bright-magenta: #bb9af7;
+    --ansi-bright-cyan: #7dcfff;
+    --ansi-bright-white: #c0caf5;
+  }
+}

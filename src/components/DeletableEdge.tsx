@@ -3,9 +3,12 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   getBezierPath,
+  getSmoothStepPath,
+  getStraightPath,
   useReactFlow,
   type EdgeProps,
 } from "@xyflow/react";
+import type { EdgePath } from "../lib/connections";
 
 // Aresta tipada (dados/controle) com uma pequena barra ao ser selecionada:
 // alterna o tipo e remove a conexão.
@@ -23,18 +26,20 @@ function DeletableEdgeInner({
   data,
 }: EdgeProps) {
   const { setEdges, updateEdgeData } = useReactFlow();
-  const d = data as { active?: boolean; kind?: "data" | "control" } | undefined;
+  const d = data as
+    | { active?: boolean; kind?: "data" | "control"; path?: EdgePath }
+    | undefined;
   const active = d?.active;
   const isControl = d?.kind === "control";
 
-  const [path, labelX, labelY] = getBezierPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-  });
+  // Traçado escolhido por aresta no menu de contexto (padrão: curva).
+  const geo = { sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition };
+  const [path, labelX, labelY] =
+    d?.path === "straight"
+      ? getStraightPath(geo)
+      : d?.path === "step"
+        ? getSmoothStepPath({ ...geo, borderRadius: 8 })
+        : getBezierPath(geo);
 
   const edgeStyle: React.CSSProperties = {
     ...style,

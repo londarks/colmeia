@@ -1,0 +1,106 @@
+/* Portado do app "markdown" (apps/desktop/src/styles/themes/dracula.css). */
+/* Dracula — Dark theme with vibrant colors */
+@layer builtin-theme {
+  [data-theme="dracula"] {
+    --bg-sidebar: #21222c;
+    --bg-note-list: #282a36;
+    --bg-editor: #2d2f3d;
+    --bg-hover: #44475a;
+    --bg-selected: #6272a4;
+    --bg-input: #343746;
+    --bg-dropdown: #343746;
+    --bg-tooltip: #21222c;
+    --bg-modal: #282a36;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.6);
+
+    --text-primary: #f8f8f2;
+    --text-secondary: #bfbfbf;
+    --text-muted: #6272a4;
+    --text-faint: #44475a;
+    --text-inverse: #282a36;
+
+    --accent: #bd93f9;
+    --accent-hover: #caa9fa;
+    --accent-muted: rgba(189, 147, 249, 0.15);
+    --accent-blue: #8be9fd;
+    --accent-blue-hover: #a4edfd;
+
+    --border: #44475a;
+    --border-subtle: #343746;
+    --border-focus: #bd93f9;
+
+    --scrollbar: #44475a;
+    --scrollbar-hover: #6272a4;
+
+    --selection: rgba(189, 147, 249, 0.3);
+    --selection-text: inherit;
+
+    --success: #50fa7b;
+    --warning: #f1fa8c;
+    --error: #ff5555;
+    --info: #8be9fd;
+
+    --heading-1: #ff79c6;
+    --heading-2: #bd93f9;
+    --heading-3: #8be9fd;
+    --heading-4: #50fa7b;
+    --code-bg: #343746;
+    --code-text: #f8f8f2;
+    --link: #8be9fd;
+    --link-hover: #a4edfd;
+
+    /* Syntax highlighting */
+    --syntax-keyword: #ff79c6;
+    --syntax-string: #f1fa8c;
+    --syntax-number: #bd93f9;
+    --syntax-comment: #6272a4;
+    --syntax-function: #50fa7b;
+    --syntax-type: #8be9fd;
+    --syntax-property: #ffb86c;
+    --syntax-operator: #ff79c6;
+    --syntax-variable: #f8f8f2;
+
+    --editor-line-active: rgba(189, 147, 249, 0.06);
+    --editor-cursor: #f8f8f2;
+    --editor-matching-bracket: rgba(189, 147, 249, 0.3);
+
+    --sidebar-icon-notebook: #bd93f9;
+    --sidebar-icon-tag: #8be9fd;
+    --sidebar-icon-status: #50fa7b;
+    --sidebar-icon-trash: #ff5555;
+
+    --note-card-border: #44475a;
+    --note-card-hover: #343746;
+    --note-card-selected: #44475a;
+    --note-excerpt: #6272a4;
+    --note-date: #6272a4;
+  }
+}
+
+/* colmeia — extensões do tema: terminal (ANSI), arestas, sombras e esquema de cor */
+@layer builtin-theme {
+  [data-theme="dracula"] {
+    color-scheme: dark;
+
+    /* Conexão "acesa" durante uma interação (contrasta com o --accent) */
+    --edge-active: #8be9fd;
+
+    /* Paleta ANSI do terminal (xterm) */
+    --ansi-black: #21222c;
+    --ansi-red: #ff5555;
+    --ansi-green: #50fa7b;
+    --ansi-yellow: #f1fa8c;
+    --ansi-blue: #bd93f9;
+    --ansi-magenta: #ff79c6;
+    --ansi-cyan: #8be9fd;
+    --ansi-white: #f8f8f2;
+    --ansi-bright-black: #6272a4;
+    --ansi-bright-red: #ff6e6e;
+    --ansi-bright-green: #69ff94;
+    --ansi-bright-yellow: #ffffa5;
+    --ansi-bright-blue: #d6acff;
+    --ansi-bright-magenta: #ff92df;
+    --ansi-bright-cyan: #a4ffff;
+    --ansi-bright-white: #ffffff;
+  }
+}

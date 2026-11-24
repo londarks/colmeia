@@ -19,7 +19,10 @@ import logoUrl from "./assets/logo.png";
 import { TerminalNode } from "./nodes/TerminalNode";
 import { NoteNode } from "./nodes/NoteNode";
 import { BrowserNode } from "./nodes/BrowserNode";
+import { portalClose } from "./lib/portal";
 import { TextNode } from "./nodes/TextNode";
+import { ImageNode } from "./nodes/ImageNode";
+import { GroupNode } from "./nodes/GroupNode";
 import { DeletableEdge } from "./components/DeletableEdge";
 import { DrawLayer, type DrawTool, type Stroke } from "./components/DrawLayer";
 import { Toolbar } from "./components/Toolbar";
@@ -28,12 +31,29 @@ import { ApprovalsPanel } from "./components/ApprovalsPanel";
 import { FloorsPanel } from "./components/FloorsPanel";
 import { OmbroPanel } from "./components/OmbroPanel";
 import { TitleBar } from "./components/TitleBar";
+import { StatusBar } from "./components/StatusBar";
 import { WorkspacePanel } from "./components/WorkspacePanel";
-import { AGENTS, type AgentId } from "./lib/agents";
-import { ROLES, ROLE_MAP, type Role } from "./lib/roles";
-import { THEMES, getStoredTheme, applyTheme } from "./lib/theme";
+import { LiftOverlay } from "./components/LiftOverlay";
+import {
+  setActiveCanvas as setTerminalCanvas,
+  disposeTerminal,
+  disposeCanvas as disposeCanvasTerminals,
+} from "./lib/terminalRegistry";
+import { PartiturasPanel } from "./components/PartiturasPanel";
+import { usePartituras } from "./hooks/usePartituras";
+import { useClipboard } from "./hooks/useClipboard";
+import { useFileDrop } from "./hooks/useFileDrop";
+import { useGrouping } from "./hooks/useGrouping";
+import { useCanvasUx } from "./hooks/useCanvasUx";
+import { withNodeErrorBoundary } from "./components/NodeErrorBoundary";
+import type { CanvasApi } from "./lib/canvas";
+import { AGENTS, AGENT_LIST, type AgentId } from "./lib/agents";
+import { ROLES, loadRoles, type Role } from "./lib/roles";
+import { getStoredTheme, applyTheme } from "./lib/theme";
+import { useCanvasControls } from "./lib/useCanvasControls";
 import {
   setGraph,
+  setPresets,
   workspacesList,
   workspaceSave,
   workspaceLoad,
@@ -46,9 +66,17 @@ import {
   type WorkspaceData,
   type WorkspaceIndex,
 } from "./lib/pty";
-import "./App.css";
 
 let counter = 0;
+
+/** Mantém o contador de ids acima de todos os ids existentes (evita ids repetidos). */
+function bumpCounter(list: Node[]) {
+  const maxN = list.reduce((m, n) => {
+    const num = parseInt(String(n.id).split("-").pop() ?? "0", 10);
+    return Number.isFinite(num) ? Math.max(m, num) : m;
+  }, 0);
+  counter = Math.max(counter, maxN);
+}
 
 export default function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -64,13 +92,23 @@ export default function App() {
   const [tool, setTool] = useState<DrawTool>("select");
   const [drawColor, setDrawColor] = useState("#e6e9ef");
   const [strokes, setStrokes] = useState<Stroke[]>([]);
+  // Papéis (built-ins + do usuário), vindos do backend.
+  const [roleList, setRoleList] = useState<Role[]>(ROLES);
+  const roleMap = useMemo(
+    () => Object.fromEntries(roleList.map((r) => [r.id, r])) as Record<string, Role>,
+    [roleList],
+  );
   const nodeTypes = useMemo<NodeTypes>(
-    () => ({
-      terminal: TerminalNode,
-      note: NoteNode,
-      browser: BrowserNode,
-      text: TextNode,
-    }),
+    () =>
+      // Error boundary por nó: um nó que quebra não derruba o canvas.
+      withNodeErrorBoundary({
+        terminal: TerminalNode,
+        note: NoteNode,
+        browser: BrowserNode,
+        text: TextNode,
+        image: ImageNode,
+        group: GroupNode,
+      }),
     [],
   );
   const edgeTypes = useMemo(() => ({ default: DeletableEdge }), []);
@@ -91,6 +129,50 @@ export default function App() {
   strokesRef.current = strokes;
   const activeRef = useRef(activeCanvas);
   activeRef.current = activeCanvas;
+  // Terminais criados neste render pertencem ao canvas ativo (escopo do scrollback).
+  // Fica no corpo do render porque os efeitos dos nós rodam antes dos efeitos do App.
+  setTerminalCanvas(activeCanvas);
+
+  // Palette (Ctrl+K), atalhos, modo connect, notificações, undo/redo e câmera.
+  // As ações são lambdas porque as funções abaixo ainda não foram declaradas.
+  const controls = useCanvasControls({
+    nodes,
+    edges,
+    strokes,
+    setNodes,
+    setEdges,
+    setStrokes,
+    canvases,
+    activeCanvas,
+    actions: {
+      switchCanvas: (id) => void switchCanvas(id),
+      addAgent: (a) => addNode(a),
+      addNote: () => addNoteNode("Nota", ""),
+      addText: () => addTextNode(),
+      addBrowser: () => addBrowserNode(),
+      setTheme,
+      toggleRoutines: () => setShowRoutines((v) => !v),
+      toggleFloors: () => setShowFloors((v) => !v),
+      toggleOmbro: () => setShowOmbro((v) => !v),
+    },
+  });
+
+  // Partituras, copiar/colar, drop de arquivos e grupos (lógica nos hooks).
+  const canvasApi = useMemo<CanvasApi>(
+    () => ({ nodesRef, edgesRef, setNodes, setEdges }),
+    [setNodes, setEdges],
+  );
+  const partituras = usePartituras(canvasApi);
+  useClipboard(canvasApi);
+  useFileDrop(canvasApi, { onPartitura: partituras.reviewImport });
+  const grouping = useGrouping(canvasApi);
+  // Menu de contexto, grade/guias, alinhar/tidy, Dock, Composer e validação de conexões.
+  const ux = useCanvasUx({
+    api: canvasApi,
+    nodes: controls.nodes,
+    grouping,
+    focusNode: controls.focusNode,
+  });
 
   // Persistência: só salva depois do carregamento inicial (evita salvar vazio).
   const readyRef = useRef(false);
@@ -103,6 +185,7 @@ export default function App() {
       position: n.position,
       data: n.data,
       style: n.style,
+      ...(n.parentId ? { parentId: n.parentId } : {}),
     })),
     edges: edgesRef.current.map((e) => ({
       id: e.id,
@@ -112,6 +195,7 @@ export default function App() {
       data: e.data,
     })),
     strokes: strokesRef.current,
+    viewport: controls.camera.getViewport(),
   });
 
   // Aplica os dados de um canvas no estado do React Flow.
@@ -120,12 +204,26 @@ export default function App() {
     setNodes(list);
     setEdges((ws.edges as Edge[]) ?? []);
     setStrokes((ws.strokes as Stroke[]) ?? []);
+    // Novo canvas: histórico limpo + câmera salva dele.
+    controls.history.reset();
+    controls.camera.restoreViewport(ws.viewport);
     // Evita colisão de ids ao criar novos nós (mantém o contador monotônico).
-    const maxN = list.reduce((m, n) => {
-      const num = parseInt(String(n.id).split("-").pop() ?? "0", 10);
-      return Number.isFinite(num) ? Math.max(m, num) : m;
-    }, 0);
-    counter = Math.max(counter, maxN);
+    bumpCounter(list);
+  };
+
+  // Exclusão de canvas: mata os terminais dele (ids lidos do workspace salvo + os que o
+  // registry conhece) e apaga o scrollback. Trocar de canvas NÃO mata nada.
+  const killCanvasTerminals = async (id: string) => {
+    let ids: string[] = [];
+    try {
+      const ws = await workspaceLoad(id);
+      ids = ((ws.nodes as Node[]) ?? [])
+        .filter((n) => n.type === "terminal")
+        .map((n) => n.id);
+    } catch {
+      /* sem arquivo: só o que o registry conhece */
+    }
+    await disposeCanvasTerminals(id, ids);
   };
 
   // Carrega o índice de canvases + o canvas ativo ao iniciar.
@@ -136,6 +234,15 @@ export default function App() {
         const active = idx.active || idx.items[0]?.id || "";
         activeRef.current = active;
         setActiveCanvas(active);
+        // Os terminais de todos os canvases ficam vivos ao mesmo tempo: o contador de ids
+        // precisa ser global, senão dois canvases podem gerar o mesmo id (= mesmo PTY).
+        idx.items
+          .filter((c) => c.id !== active)
+          .forEach((c) =>
+            workspaceLoad(c.id)
+              .then((ws) => bumpCounter((ws.nodes as Node[]) ?? []))
+              .catch(() => {}),
+          );
         if (active) applyCanvas(await workspaceLoad(active));
       })
       .catch(() => {})
@@ -153,7 +260,7 @@ export default function App() {
       workspaceSave(activeRef.current, buildWorkspace()).catch(() => {});
     }, 800);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, edges, strokes]);
+  }, [nodes, edges, strokes, controls.camera.moveTick]);
 
   // Salva o canvas atual antes de sair dele (usado ao trocar/criar).
   const flushActive = async () => {
@@ -192,6 +299,7 @@ export default function App() {
   };
 
   const removeCanvas = async (id: string) => {
+    await killCanvasTerminals(id);
     const idx = await workspaceDelete(id);
     setCanvases(idx.items);
     if (activeRef.current === id && !idx.items.some((c) => c.id === id)) {
@@ -226,6 +334,7 @@ export default function App() {
     let idx: WorkspaceIndex | null = null;
     for (const id of ids) {
       try {
+        await killCanvasTerminals(id);
         idx = await workspaceDelete(id);
       } catch (e) {
         console.error(`Erro ao deletar workspace ${id}`, e);
@@ -247,30 +356,57 @@ export default function App() {
     applyTheme(theme);
   }, [theme]);
 
+  // Papéis do backend + catálogo de agentes para o `colmeia preset list`.
+  useEffect(() => {
+    const refresh = () => loadRoles().then(setRoleList).catch(() => {});
+    refresh();
+    setPresets(
+      AGENT_LIST.map((a) => {
+        const { command, args } = a.resolve();
+        return { id: a.id, label: a.label, command: [command, ...args].join(" ") };
+      }),
+    ).catch(() => {});
+    const sub = listen("colmeia://roles-changed", refresh);
+    return () => {
+      sub.then((un) => un());
+    };
+  }, []);
+
   // Espelha o grafo no backend sempre que nós/arestas mudam (escopo do roteamento).
   useEffect(() => {
     const graphNodes = nodes.map((n) => {
       const d = n.data as {
         title?: string;
+        agent?: string;
         role?: string;
         content?: string;
         cwd?: string;
         autoApproveInCwd?: boolean;
+        maestro?: boolean;
+        locked?: boolean;
+        band?: boolean;
       };
       return {
         id: n.id,
         type: n.type ?? "terminal",
         title: d.title ?? n.id,
-        role: d.role ? (ROLE_MAP[d.role]?.label ?? "") : "",
-        roleBriefing: d.role ? (ROLE_MAP[d.role]?.briefing ?? "") : "",
-        content: d.content ?? "",
+        agent: d.agent ?? "",
+        role: d.role ? (roleMap[d.role]?.label ?? d.role) : "",
+        roleId: d.role ?? "",
+        // Portal: o backend lê a URL salva do nó para reabrir o navegador.
+        content: (n.type === "browser" ? (n.data as { url?: string }).url : d.content) ?? "",
         cwd: d.cwd ?? "",
         autoApproveInCwd: !!d.autoApproveInCwd,
+        maestro: !!d.maestro,
+        locked: !!d.locked,
+        // Bands: o backend expande o alcance pelos membros (parentId) do grupo-band.
+        parent: n.parentId ?? "",
+        band: n.type === "group" && !!d.band,
       };
     });
     const graphEdges = edges.map((e) => ({ source: e.source, target: e.target }));
     setGraph(graphNodes, graphEdges).catch(() => {});
-  }, [nodes, edges]);
+  }, [nodes, edges, roleMap]);
 
   const onConnect = useCallback(
     (c: Connection) => setEdges((eds) => addEdge({ ...c, animated: true }, eds)),
@@ -365,9 +501,36 @@ export default function App() {
     [setNodes],
   );
 
-  // Abre/atualiza um browser conectado ao agente (via `colmeia browse`).
+  // Abre/atualiza um browser conectado ao agente (via `colmeia portal open`/`browse`).
+  // Com `portalId`, o backend já abriu a sessão CDP com esse id: cria o nó com
+  // ele (ligado ao agente) — o quadro só pluga no navegador que já existe.
   const onBrowse = useCallback(
-    (url: string, sourceId: string) => {
+    (url: string, sourceId: string, portalId?: string, portalTitle?: string) => {
+      if (portalId) {
+        if (nodesRef.current.some((n) => n.id === portalId)) return;
+        const src = nodesRef.current.find((n) => n.id === sourceId);
+        const srcW = src?.measured?.width ?? (src?.style?.width as number | undefined) ?? 600;
+        setNodes((nds) =>
+          nds.concat({
+            id: portalId,
+            type: "browser",
+            position: src
+              ? { x: src.position.x + srcW + 60, y: src.position.y }
+              : { x: 220, y: 180 },
+            data: { title: portalTitle || "Portal", url },
+            style: { width: 720, height: 520 },
+          }),
+        );
+        if (sourceId) {
+          setEdges((eds) =>
+            addEdge(
+              { id: `e-${sourceId}-${portalId}`, source: sourceId, target: portalId, animated: true },
+              eds,
+            ),
+          );
+        }
+        return;
+      }
       const connected = edgesRef.current
         .filter((e) => e.source === sourceId || e.target === sourceId)
         .map((e) => (e.source === sourceId ? e.target : e.source));
@@ -406,41 +569,24 @@ export default function App() {
     [setNodes, setEdges],
   );
 
-  // Roteia um click/type para o browser node conectado ao agente.
-  const cmdNonce = useRef(0);
-  const onWebviewAction = useCallback(
-    (action: string, selector: string, text: string, sourceId: string) => {
-      const connected = edgesRef.current
-        .filter((e) => e.source === sourceId || e.target === sourceId)
-        .map((e) => (e.source === sourceId ? e.target : e.source));
-      const bn = nodesRef.current.find(
-        (n) => n.type === "browser" && connected.includes(n.id),
-      );
-      if (!bn) return;
-      cmdNonce.current += 1;
-      const n = cmdNonce.current;
-      setNodes((nds) =>
-        nds.map((x) =>
-          x.id === bn.id
-            ? { ...x, data: { ...x.data, command: { action, selector, text, n } } }
-            : x,
-        ),
-      );
-    },
-    [setNodes],
-  );
+  // Acha um nó pelo id (o backend já resolve com escopo) ou, por compat, pelo título.
+  const findNode = useCallback((ref: string) => {
+    if (!ref) return undefined;
+    return (
+      nodesRef.current.find((n) => n.id === ref) ??
+      nodesRef.current.find(
+        (n) =>
+          ((n.data as { title?: string }).title ?? n.id).toLowerCase() ===
+          ref.toLowerCase(),
+      )
+    );
+  }, []);
 
-  // Conecta dois nós resolvendo-os pelo título (usado por `colmeia connect`).
+  // Conecta dois nós (usado por `colmeia connect`; o payload traz ids).
   const connectByTitle = useCallback(
     (source: string, target: string) => {
-      const byTitle = (t: string) =>
-        nodesRef.current.find(
-          (n) =>
-            ((n.data as { title?: string }).title ?? n.id).toLowerCase() ===
-            t.toLowerCase(),
-        );
-      const a = byTitle(source);
-      const b = byTitle(target);
+      const a = findNode(source);
+      const b = findNode(target);
       if (a && b && a.id !== b.id) {
         setEdges((eds) =>
           addEdge(
@@ -450,7 +596,7 @@ export default function App() {
         );
       }
     },
-    [setEdges],
+    [setEdges, findNode],
   );
 
   // Acende a aresta entre dois nós quando um agente interage com o outro.
@@ -486,66 +632,38 @@ export default function App() {
   );
 
   // Recruta um novo agente (via `colmeia recruit`), já conectado ao recrutador.
-  // Tolerante: descobre o runtime (claude por padrão) e o papel por aproximação,
-  // aceitando os argumentos em qualquer ordem.
+  // O backend já validou nome (único), agente (catálogo) e papel (id existente).
   const recruitAgent = useCallback(
-    (arg1: string, arg2: string, sourceId: string) => {
-      const name = (arg1 || "").trim();
-      const roleStr = (arg2 || "").trim();
-      const cands = [name, roleStr].map((s) => s.toLowerCase()).filter(Boolean);
-      const AGENT_IDS: AgentId[] = ["shell", "claude", "codex", "ollama"];
-      const agentId =
-        (cands.find((c) => AGENT_IDS.includes(c as AgentId)) as AgentId) ||
-        "claude";
-      // Papel por aproximação (ex.: "engenheiro-software" → Engenheiro).
-      const matchRole = (s: string) =>
-        ROLES.find((r) => {
-          const label = r.label.toLowerCase();
-          return (
-            r.id === s ||
-            label === s ||
-            (s.length >= 4 &&
-              (s.includes(label) || label.includes(s) || s.includes(r.id)))
-          );
-        });
-      // Papel vem do 2º argumento; se ausente, tenta inferir do nome (compat: recruit "Testador").
-      let role: Role | undefined = matchRole(roleStr.toLowerCase());
-      if (!role && !roleStr) role = matchRole(name.toLowerCase());
-      // Herda a pasta de trabalho do recrutador (toda a força-tarefa na mesma pasta).
-      const cwd = (
-        nodesRef.current.find((n) => n.id === sourceId)?.data as {
-          cwd?: string;
-        }
-      )?.cwd;
+    (p: { name: string; agent: string; role: string; dir: string; source: string }) => {
+      const agentId: AgentId = p.agent in AGENTS ? (p.agent as AgentId) : "claude";
+      // Sem --dir, herda a pasta de trabalho do recrutador (força-tarefa na mesma pasta).
+      const cwd =
+        p.dir ||
+        (
+          nodesRef.current.find((n) => n.id === p.source)?.data as {
+            cwd?: string;
+          }
+        )?.cwd;
       counter += 1;
       const id = `${agentId}-${counter}`;
       const offset = (counter % 5) * 42;
-      // O nome vira o título — a menos que seja só uma palavra-chave (runtime, ou o
-      // papel inferido do próprio nome), caso em que cai no rótulo auto-numerado.
-      const nameLower = name.toLowerCase();
-      const nameIsKeyword =
-        AGENT_IDS.includes(nameLower as AgentId) ||
-        (!roleStr && !!matchRole(nameLower));
       setNodes((nds) => {
         const sameKind = nds.filter(
           (n) => (n.data as { agent?: AgentId }).agent === agentId,
         ).length;
-        const title =
-          name && !nameIsKeyword
-            ? name
-            : `${AGENTS[agentId].label} ${sameKind + 1}`;
+        const title = p.name.trim() || `${AGENTS[agentId].label} ${sameKind + 1}`;
         return nds.concat({
           id,
           type: "terminal",
           position: { x: 160 + offset, y: 130 + offset },
-          data: { agent: agentId, title, role: role?.id, cwd },
+          data: { agent: agentId, title, role: p.role || undefined, cwd },
           style: { width: 500, height: 340 },
         });
       });
-      if (sourceId) {
+      if (p.source) {
         setEdges((eds) =>
           addEdge(
-            { id: `e-${sourceId}-${id}`, source: sourceId, target: id, animated: true },
+            { id: `e-${p.source}-${id}`, source: p.source, target: id, animated: true },
             eds,
           ),
         );
@@ -554,23 +672,52 @@ export default function App() {
     [setNodes, setEdges],
   );
 
-  // Dispensa (remove) um agente pelo título (via `colmeia dismiss`).
-  const dismissAgent = useCallback(
-    (title: string) => {
-      const node = nodesRef.current.find(
-        (n) =>
-          n.type === "terminal" &&
-          ((n.data as { title?: string }).title ?? n.id).toLowerCase() ===
-            title.toLowerCase(),
+  // Atualiza dados de um nó a pedido do backend (`role assign`, `recruit --replace`).
+  // `restart` muda o `restartKey`, que reinicia o processo mantendo id e arestas.
+  const updateNodeFromBackend = useCallback(
+    (p: { id: string; patch: Record<string, unknown>; restart: boolean }) => {
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id !== p.id) return n;
+          const patch: Record<string, unknown> = { ...p.patch };
+          // Papel vazio = sem papel.
+          if ("role" in patch && !patch.role) patch.role = undefined;
+          if (p.restart) patch.restartKey = Date.now();
+          return { ...n, data: { ...n.data, ...patch } };
+        }),
       );
-      if (node) {
+    },
+    [setNodes],
+  );
+
+  // Conteúdo de nota editado por um agente (`colmeia note write/edit`).
+  const updateNoteContent = useCallback(
+    (id: string, content: string) => {
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === id && n.type === "note"
+            ? { ...n, data: { ...n.data, content } }
+            : n,
+        ),
+      );
+    },
+    [setNodes],
+  );
+
+
+  // Dispensa (remove) um agente (via `colmeia dismiss`; o payload traz o id).
+  const dismissAgent = useCallback(
+    (ref: string) => {
+      const node = findNode(ref);
+      if (node && node.type === "terminal") {
+        disposeTerminal(node.id, { canvasId: activeRef.current });
         setNodes((nds) => nds.filter((n) => n.id !== node.id));
         setEdges((eds) =>
           eds.filter((e) => e.source !== node.id && e.target !== node.id),
         );
       }
     },
-    [setNodes, setEdges],
+    [setNodes, setEdges, findNode],
   );
 
   // Sincroniza o status "aguardando aprovação" nos nós que têm aprovação pendente.
@@ -587,48 +734,37 @@ export default function App() {
   }, [approvals]);
 
   // Ouve pedidos do backend (agente rodando `colmeia note` / `connect` / interações).
+  // Os alvos chegam como ids já resolvidos com escopo pelo servidor.
   useEffect(() => {
     const subs = [
       listen<{ title: string; content: string; source: string; target: string }>(
         "colmeia://add-note",
         (e) => {
           const { title, content, source, target } = e.payload;
-          // Destino: o agente indicado (por título), senão o próprio criador.
-          let connectId: string | undefined = source || undefined;
-          if (target) {
-            const t = nodesRef.current.find(
-              (n) =>
-                n.type === "terminal" &&
-                ((n.data as { title?: string }).title ?? n.id).toLowerCase() ===
-                  target.toLowerCase(),
-            );
-            if (t) connectId = t.id;
-          }
-          addNoteNode(title, content, connectId);
+          // Destino: o agente indicado, senão o próprio criador.
+          const t = target ? findNode(target) : undefined;
+          addNoteNode(title, content, t?.id ?? (source || undefined));
         },
+      ),
+      listen<{ id: string; content: string }>("colmeia://note-update", (e) =>
+        updateNoteContent(e.payload.id, e.payload.content),
       ),
       listen<{ source: string; target: string }>("colmeia://connect", (e) =>
         connectByTitle(e.payload.source, e.payload.target),
       ),
-      listen<{ agent: string; role: string; source: string }>(
+      listen<{ name: string; agent: string; role: string; dir: string; source: string }>(
         "colmeia://recruit",
-        (e) => recruitAgent(e.payload.agent, e.payload.role, e.payload.source),
+        (e) => recruitAgent(e.payload),
       ),
-      listen<{ title: string }>("colmeia://dismiss", (e) =>
-        dismissAgent(e.payload.title),
+      listen<{ id: string; patch: Record<string, unknown>; restart: boolean }>(
+        "colmeia://node-update",
+        (e) => updateNodeFromBackend(e.payload),
       ),
-      listen<{ url: string; source: string }>("colmeia://browse", (e) =>
-        onBrowse(e.payload.url, e.payload.source),
+      listen<{ id?: string; title: string }>("colmeia://dismiss", (e) =>
+        dismissAgent(e.payload.id || e.payload.title),
       ),
-      listen<{ action: string; selector: string; text: string; source: string }>(
-        "colmeia://webview-action",
-        (e) =>
-          onWebviewAction(
-            e.payload.action,
-            e.payload.selector,
-            e.payload.text,
-            e.payload.source,
-          ),
+      listen<{ url: string; source: string; id?: string; title?: string }>("colmeia://browse", (e) =>
+        onBrowse(e.payload.url, e.payload.source, e.payload.id, e.payload.title),
       ),
       listen<{ source: string; target: string }>("colmeia://interaction", (e) =>
         highlightEdge(e.payload.source, e.payload.target),
@@ -648,18 +784,20 @@ export default function App() {
     connectByTitle,
     highlightEdge,
     recruitAgent,
+    updateNodeFromBackend,
+    updateNoteContent,
     dismissAgent,
+    findNode,
     onBrowse,
-    onWebviewAction,
   ]);
 
   const nodeColor = useCallback(
     (n: Node) =>
       n.type === "note"
-        ? "#f59e0b"
+        ? "var(--warning)"
         : n.type === "browser"
-          ? "#38bdf8"
-          : AGENTS[(n.data as { agent: AgentId }).agent]?.color ?? "#666",
+          ? "var(--info)"
+          : AGENTS[(n.data as { agent: AgentId }).agent]?.color ?? "var(--text-muted)",
     [],
   );
 
@@ -708,23 +846,10 @@ export default function App() {
             onDelete={removeCanvas}
             onDeleteMany={removeCanvases}
           />
-        <div className="side-section">
-          <div className="side-label">Tema</div>
-          <label className="theme-picker" title="Tema">
-            <span className="theme-swatch" />
-            <select value={theme} onChange={(e) => setTheme(e.target.value)}>
-              {THEMES.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
       </aside>
         )}
 
-      <main className="canvas">
+      <main className={`canvas ${controls.canvasClassName}`}>
         {!sidebarOpen && (
           <button
             className="sidebar-reopen"
@@ -735,11 +860,26 @@ export default function App() {
           </button>
         )}
         <ReactFlow
-          nodes={nodes}
-          edges={edges}
+          nodes={ux.nodes}
+          edges={controls.edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
+          onNodesDelete={(deleted) => {
+            // Nó deletado de verdade (Delete / botão fechar): aí sim mata o PTY.
+            deleted
+              .filter((n) => n.type === "terminal")
+              .forEach((n) => disposeTerminal(n.id, { canvasId: activeRef.current }));
+            // Portal deletado: mata o navegador headless e apaga o perfil dele.
+            deleted
+              .filter((n) => n.type === "browser")
+              .forEach((n) => portalClose(n.id).catch(() => {}));
+          }}
+          onBeforeDelete={grouping.onBeforeDelete}
           onConnect={onConnect}
+          {...ux.flowProps}
+          onNodeClick={controls.onNodeClick}
+          onPaneClick={controls.onPaneClick}
+          onMoveEnd={controls.onMoveEnd}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           deleteKeyCode={["Delete"]}
@@ -768,9 +908,9 @@ export default function App() {
             zoomable
             nodeColor={nodeColor}
             nodeStrokeWidth={0}
-            maskColor="rgba(0, 0, 0, 0.55)"
           />
           <Controls className="controls" showInteractive={false} />
+          {ux.viewportLayer}
           <DrawLayer
             tool={tool}
             color={drawColor}
@@ -795,12 +935,16 @@ export default function App() {
           setShowFloors={setShowFloors}
           showOmbro={showOmbro}
           setShowOmbro={setShowOmbro}
+          showPartituras={partituras.open}
+          onTogglePartituras={() => partituras.setOpen((v) => !v)}
+          showComposer={ux.composer.open}
+          onToggleComposer={ux.composer.toggle}
         />
 
         {showRoutines && (
           <RoutinesPanel
             terminals={terminals}
-            defaultTarget={selectedTerminalTitle}
+            defaultTarget={selectedTerminal?.id ?? ""}
             onClose={() => setShowRoutines(false)}
           />
         )}
@@ -813,7 +957,11 @@ export default function App() {
           />
         )}
 
+        <LiftOverlay nodes={nodes} />
+
         {showOmbro && <OmbroPanel onClose={() => setShowOmbro(false)} />}
+
+        {partituras.open && <PartiturasPanel api={partituras} />}
 
         <ApprovalsPanel
           approvals={approvals}
@@ -822,18 +970,28 @@ export default function App() {
           }
         />
 
+        {controls.overlays}
+        {ux.overlays}
+
         {nodes.length === 0 && (
           <div className="empty">
             <img src={logoUrl} className="empty-logo" alt="" />
             <h2>Canvas vazio</h2>
             <p>
-              Adicione um agente na barra à esquerda. Cada nó é um{" "}
+              Adicione um agente pela barra no topo do canvas (ou Ctrl+K). Cada nó é um{" "}
               <b>terminal real</b>, rodando um shell ou uma CLI de agente de verdade.
             </p>
           </div>
         )}
         </main>
       </div>
+      <StatusBar
+        canvasName={canvases.find((c) => c.id === activeCanvas)?.name ?? ""}
+        terminalIds={terminals.map((t) => t.id)}
+        approvals={approvals.length}
+        theme={theme}
+        onTheme={setTheme}
+      />
     </div>
   );
 }

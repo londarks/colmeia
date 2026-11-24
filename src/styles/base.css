@@ -1,0 +1,665 @@
+/* ==========================================================================
+   Base global — no espírito do globals.css do app "markdown":
+   fonte do sistema, tamanhos densos, scrollbars finas, foco visível com
+   --border-focus e um vocabulário pequeno de primitivas (botão, campo, kbd,
+   pílula, bolinha de status, rótulo de seção, tooltip, modal, dropdown).
+
+   As primitivas têm uma classe `.ui-*` (para componentes novos) e, no mesmo
+   seletor, as classes que o app já usa — assim o visual fica consistente sem
+   reescrever o JSX. Cores: só tokens (src/styles/themes/*).
+   ========================================================================== */
+
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-mono: "Cascadia Code", "Fira Code", Consolas, Menlo, monospace;
+
+  /* Escala densa (Tailwind do markdown: text-[10px]/xs/sm). */
+  --fs-2xs: 10px;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-base: 13px;
+  --fs-md: 14px;
+
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast: 0.12s ease;
+}
+
+/* ---------- Reset ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar);
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-hover);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::selection {
+  background-color: var(--selection);
+  color: var(--selection-text);
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg-note-list);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-mono);
+}
+
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ==========================================================================
+   Primitivas
+   ========================================================================== */
+
+/* ---------- Rótulo de seção (NOTEBOOKS / STATUS / TAGS do markdown) ---------- */
+.ui-label,
+.side-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 8px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+/* Contador alinhado à direita (nº de notas no markdown). */
+.ui-count,
+.side-count,
+.ws-count {
+  margin-left: auto;
+  flex: none;
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Botões ---------- */
+/* Secundário (confirm-btn-cancel do markdown). */
+.ui-btn,
+.floor-btn,
+.pt-btn,
+.repo-pick,
+.portal-retry,
+.ws-dialog-cancel,
+.ux-node-error-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast),
+    opacity var(--t-fast);
+}
+.ui-btn:hover:not(:disabled),
+.floor-btn:hover:not(:disabled),
+.pt-btn:hover:not(:disabled),
+.repo-pick:hover:not(:disabled),
+.portal-retry:hover:not(:disabled),
+.ws-dialog-cancel:hover:not(:disabled),
+.ux-node-error-actions button:hover:not(:disabled) {
+  background: var(--bg-selected);
+  color: var(--text-primary);
+}
+
+/* Primário (confirm-btn-confirm do markdown). */
+.ui-btn-primary,
+.panel-add,
+.pt-btn.primary,
+.ux-composer-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  color: var(--text-on-accent);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  transition: background var(--t-fast), border-color var(--t-fast), opacity var(--t-fast);
+}
+.ui-btn-primary:hover:not(:disabled),
+.panel-add:hover:not(:disabled),
+.pt-btn.primary:hover:not(:disabled),
+.ux-composer-send:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--text-on-accent);
+}
+
+/* Perigo cheio (confirm-btn-danger do markdown). */
+.ui-btn-danger,
+.ws-dialog-confirm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-on-accent);
+  background: var(--error);
+  border: 1px solid var(--error);
+  border-radius: var(--radius-md);
+  transition: opacity var(--t-fast);
+}
+.ui-btn-danger:hover,
+.ws-dialog-confirm:hover {
+  opacity: 0.88;
+}
+
+/* Perigo discreto (texto vermelho; ganha fundo no hover). */
+.floor-btn.floor-danger,
+.pt-btn.danger:hover,
+.ux-node-error-actions button.danger {
+  color: var(--error);
+}
+.floor-btn.floor-danger:hover:not(:disabled),
+.pt-btn.danger:hover:not(:disabled),
+.ux-node-error-actions button.danger:hover {
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 12%, transparent);
+  border-color: color-mix(in srgb, var(--error) 40%, transparent);
+}
+
+.ui-btn:disabled,
+.ui-btn-primary:disabled,
+.floor-btn:disabled,
+.pt-btn:disabled,
+.panel-add:disabled,
+.ux-composer-send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Botão de ícone (pm-close do markdown). */
+.ui-icon-btn,
+.panel-close,
+.side-collapse,
+.ws-search-clear,
+.node-icon-btn,
+.node-close,
+.note-btn,
+.routine-del,
+.edge-del,
+.term-search-btn,
+.ux-dock-tab-btn,
+.ux-dock-collapse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  transition: background var(--t-fast), color var(--t-fast), opacity var(--t-fast);
+}
+.ui-icon-btn,
+.panel-close {
+  width: 24px;
+  height: 24px;
+}
+.ui-icon-btn:hover,
+.panel-close:hover,
+.side-collapse:hover,
+.ws-search-clear:hover,
+.node-icon-btn:hover,
+.note-btn:hover,
+.term-search-btn:hover,
+.ux-dock-tab-btn:hover,
+.ux-dock-collapse:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.panel-close.on,
+.note-btn.on,
+.term-search-btn.on {
+  color: var(--accent);
+}
+/* Fechar/remover: hover em tom de erro. */
+.node-close:hover,
+.routine-del:hover,
+.edge-del:hover {
+  background: color-mix(in srgb, var(--error) 14%, transparent);
+  color: var(--error);
+}
+
+/* ---------- Campos ---------- */
+.ui-input,
+.panel-form input:not([type="checkbox"]):not([type="radio"]),
+.panel-form select,
+.panel-form textarea,
+.floor-detail input:not([type="checkbox"]):not([type="radio"]),
+.floor-detail select,
+.browser-url,
+.ws-edit,
+.ux-rename input,
+.ux-composer-input {
+  min-width: 0;
+  padding: 5px 8px;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.ui-input::placeholder,
+.panel-form input::placeholder,
+.panel-form textarea::placeholder,
+.browser-url::placeholder,
+.ux-composer-input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+.ui-input:focus,
+.panel-form input:focus,
+.panel-form select:focus,
+.panel-form textarea:focus,
+.floor-detail input:focus,
+.floor-detail select:focus,
+.browser-url:focus,
+.ux-rename input:focus,
+.ux-composer-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--border-focus) 18%, transparent);
+}
+select option {
+  background: var(--bg-dropdown);
+  color: var(--text-primary);
+}
+
+/* Checkbox / radio nativos com a cor do tema. */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+/* Label com checkbox. */
+.ui-check,
+.floor-check,
+.pt-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.ui-check:hover,
+.floor-check:hover,
+.pt-check:hover {
+  color: var(--text-primary);
+}
+.ui-check input,
+.floor-check input,
+.pt-check input {
+  margin: 0;
+}
+
+/* ---------- Tecla ---------- */
+.ui-kbd,
+.cl-kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+}
+
+/* ---------- Pílula / tag (feature / urgente / zed no markdown) ---------- */
+.ui-pill,
+.status-pill,
+.routine-interval,
+.approval-tool,
+.floor-main,
+.pt-chip,
+.ux-chip,
+.cl-badge,
+.approvals-count {
+  --pill: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  max-width: 100%;
+  padding: 1px 6px;
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--pill);
+  background: color-mix(in srgb, var(--pill) 14%, transparent);
+  border-radius: var(--radius-sm);
+}
+
+/* ---------- Bolinha de status (Active / On Hold / Completed / Dropped) ---------- */
+.ui-dot,
+.floor-dot {
+  --dot: var(--text-muted);
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot);
+}
+.ui-dot.is-success {
+  --dot: var(--success);
+}
+.ui-dot.is-warning {
+  --dot: var(--warning);
+}
+.ui-dot.is-error {
+  --dot: var(--error);
+}
+.ui-dot.is-info {
+  --dot: var(--info);
+}
+.ui-dot.is-accent {
+  --dot: var(--accent);
+}
+.ui-dot.is-pulse {
+  animation: uiDotPulse 1.6s ease-in-out infinite;
+}
+@keyframes uiDotPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--dot) 55%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--dot) 0%, transparent);
+  }
+}
+
+/* ---------- Divisor ---------- */
+.ui-divider {
+  flex: none;
+  width: 1px;
+  height: 14px;
+  background: var(--border);
+}
+
+/* ---------- Tooltip (CSS puro, via data-tip) ---------- */
+[data-tip] {
+  position: relative;
+}
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  z-index: 50;
+  padding: 4px 8px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  color: var(--text-primary);
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 2px);
+  transition: opacity 0.12s ease 0.25s, transform 0.12s ease 0.25s;
+}
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+[data-tip-align="start"]::after {
+  left: 0;
+  transform: translate(0, 2px);
+}
+[data-tip-align="start"]:hover::after {
+  transform: translate(0, 0);
+}
+[data-tip-align="end"]::after {
+  left: auto;
+  right: 0;
+  transform: translate(0, 2px);
+}
+[data-tip-align="end"]:hover::after {
+  transform: translate(0, 0);
+}
+
+/* ---------- Superfícies flutuantes ---------- */
+/* Dropdown / menu (ctx-panel do markdown). */
+.ui-dropdown,
+.tool-dropdown,
+.ux-menu,
+.ws-menu,
+.ux-composer-menu,
+.note-palette {
+  background: var(--bg-dropdown);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  animation: uiPopIn 0.12s ease;
+}
+@keyframes uiPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Item de menu (ctx-item do markdown). */
+.ui-menu-item,
+.dropdown-item,
+.ux-menu-item,
+.ws-menu-item,
+.ux-composer-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  font-size: var(--fs-sm);
+  text-align: left;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-radius: 5px;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.ui-menu-item:hover,
+.dropdown-item:hover,
+.ux-menu-item:hover:not(:disabled),
+.ux-menu-item.active,
+.ux-menu-item:focus-visible,
+.ws-menu-item:hover,
+.ux-composer-option:hover,
+.ux-composer-option.active {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  outline: none;
+}
+.dropdown-item.danger:hover,
+.ux-menu-item.danger:hover:not(:disabled),
+.ux-menu-item.danger.active,
+.ws-menu-danger:hover {
+  background: color-mix(in srgb, var(--error) 10%, transparent);
+  color: var(--error);
+}
+
+/* Overlay + modal (pm-overlay / pm-dialog / confirm-card do markdown). */
+.ui-overlay,
+.cl-overlay,
+.ws-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-modal-overlay);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: uiFade 0.15s ease;
+}
+@keyframes uiFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.ui-modal,
+.cl-palette,
+.cl-help,
+.ws-dialog {
+  background: var(--bg-modal);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  color: var(--text-primary);
+  animation: uiModalIn 0.22s var(--ease-out);
+}
+@keyframes uiModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Painel flutuante (cartão sobre o canvas). */
+.ui-panel,
+.routines-panel,
+.approvals,
+.ux-composer {
+  background: var(--bg-modal);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  color: var(--text-primary);
+}
+
+/* Barra flutuante translúcida (toolbar do canvas, banner do modo connect). */
+.ui-floating,
+.toolbar,
+.text-node-bar,
+.cl-connect-banner {
+  background: color-mix(in srgb, var(--bg-dropdown) 90%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

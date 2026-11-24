@@ -1,0 +1,113 @@
+/* Portado do app "markdown" (apps/desktop/src/styles/themes/soft-light.css). */
+/* Soft Light — Light variant */
+@layer builtin-theme {
+  [data-theme="soft-light"] {
+    --bg-sidebar: #f0eff4;
+    --bg-note-list: #f8f7fc;
+    --bg-editor: #ffffff;
+    --bg-hover: #e8e6f0;
+    --bg-selected: #ddd8f0;
+    --bg-input: #f0eff4;
+    --bg-dropdown: #ffffff;
+    --bg-tooltip: #2b2b3d;
+    --bg-modal: #ffffff;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.3);
+
+    --text-primary: #2b2b3d;
+    --text-secondary: #5c5c78;
+    --text-muted: #8c8ca8;
+    --text-faint: #b0b0c8;
+    --text-inverse: #ffffff;
+
+    --accent: #6b5ce7;
+    --accent-hover: #7c6aef;
+    --accent-muted: rgba(107, 92, 231, 0.1);
+    --accent-blue: #4b8ce5;
+    --accent-blue-hover: #5b9cf5;
+
+    --border: #ddd8f0;
+    --border-subtle: #e8e6f0;
+    --border-focus: #6b5ce7;
+
+    --scrollbar: #c8c4d8;
+    --scrollbar-hover: #a8a4c0;
+
+    --selection: rgba(107, 92, 231, 0.2);
+    --selection-text: inherit;
+
+    --success: #22c55e;
+    --warning: #eab308;
+    --error: #ef4444;
+    --info: #3b82f6;
+
+    --heading-1: #4b8ce5;
+    --heading-2: #6b5ce7;
+    --heading-3: #0d9488;
+    --heading-4: #db2777;
+    --code-bg: #f0eff4;
+    --code-text: #5c5c78;
+    --link: #4b8ce5;
+    --link-hover: #3672c5;
+
+    /* Syntax highlighting */
+    --syntax-keyword: #7c4dff;
+    --syntax-string: #558b2f;
+    --syntax-number: #f76d47;
+    --syntax-comment: #8c8ca8;
+    --syntax-function: #6182b8;
+    --syntax-type: #e2931d;
+    --syntax-property: #4b8ce5;
+    --syntax-operator: #39adb5;
+    --syntax-variable: #2b2b3d;
+
+    --editor-line-active: rgba(107, 92, 231, 0.04);
+    --editor-cursor: #6b5ce7;
+    --editor-matching-bracket: rgba(107, 92, 231, 0.2);
+
+    --sidebar-icon-notebook: #6b5ce7;
+    --sidebar-icon-tag: #4b8ce5;
+    --sidebar-icon-status: #0d9488;
+    --sidebar-icon-trash: #ef4444;
+
+    --note-card-border: #e8e6f0;
+    --note-card-hover: #f0eff4;
+    --note-card-selected: #ddd8f0;
+    --note-excerpt: #8c8ca8;
+    --note-date: #a8a4c0;
+  }
+}
+
+/* colmeia — extensões do tema: terminal (ANSI), arestas, sombras e esquema de cor */
+@layer builtin-theme {
+  [data-theme="soft-light"] {
+    color-scheme: light;
+
+    /* Conexão "acesa" durante uma interação (contrasta com o --accent) */
+    --edge-active: #0d9488;
+
+    /* Sombras e máscara do MiniMap mais leves no claro */
+    --shadow-sm: 0 1px 2px rgba(30, 30, 60, 0.08);
+    --shadow-md: 0 4px 16px -4px rgba(30, 30, 60, 0.14), 0 2px 6px -2px rgba(30, 30, 60, 0.08);
+    --shadow-lg: 0 16px 48px -12px rgba(30, 30, 60, 0.22), 0 4px 14px -4px rgba(30, 30, 60, 0.1);
+    --shadow-node: 0 6px 22px -8px rgba(30, 30, 60, 0.18), 0 1px 3px rgba(30, 30, 60, 0.08);
+    --minimap-mask: rgba(120, 120, 150, 0.16);
+
+    /* Paleta ANSI do terminal (xterm) */
+    --ansi-black: #2b2b3d;
+    --ansi-red: #dc2626;
+    --ansi-green: #15803d;
+    --ansi-yellow: #b45309;
+    --ansi-blue: #2563eb;
+    --ansi-magenta: #7c3aed;
+    --ansi-cyan: #0f766e;
+    --ansi-white: #8c8ca8;
+    --ansi-bright-black: #5c5c78;
+    --ansi-bright-red: #ef4444;
+    --ansi-bright-green: #16a34a;
+    --ansi-bright-yellow: #d97706;
+    --ansi-bright-blue: #4b8ce5;
+    --ansi-bright-magenta: #6b5ce7;
+    --ansi-bright-cyan: #0d9488;
+    --ansi-bright-white: #2b2b3d;
+  }
+}

@@ -1,0 +1,685 @@
+/* ==========================================================================
+   Overlays com o vocabulário modal/dropdown do markdown: command palette,
+   ajuda de atalhos, menus de contexto, diálogo de confirmação, toasts,
+   banner do modo connect, renomear, Dock e Composer.
+   ========================================================================== */
+
+/* ========================= Command palette (cmdk) ========================= */
+.cl-overlay {
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 14vh;
+}
+.cl-palette {
+  display: flex;
+  flex-direction: column;
+  width: min(560px, calc(100vw - 32px));
+  max-height: 70vh;
+  overflow: hidden;
+  font-size: var(--fs-base);
+  background: var(--bg-dropdown);
+  border-radius: var(--radius-xl);
+}
+.cl-palette [cmdk-root] {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.cl-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.cl-crumb {
+  flex: none;
+  padding: 1px 7px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--accent);
+  background: var(--accent-muted);
+  border-radius: var(--radius-sm);
+}
+.cl-palette [cmdk-input],
+.cl-ask-input {
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  padding: 0;
+  font-size: var(--fs-md);
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+.cl-palette [cmdk-list] {
+  max-height: calc(70vh - 90px);
+  padding: 4px 0;
+  overflow-y: auto;
+}
+.cl-palette [cmdk-group-heading] {
+  padding: 8px 16px 4px;
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.cl-palette [cmdk-item] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 16px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.cl-palette [cmdk-item] > svg {
+  flex: none;
+  color: var(--text-muted);
+}
+.cl-palette [cmdk-item][data-selected="true"] {
+  background: var(--bg-selected);
+  color: var(--text-primary);
+}
+.cl-palette [cmdk-item][data-selected="true"] > svg {
+  color: var(--accent);
+}
+.cl-palette [cmdk-item][data-disabled="true"] {
+  opacity: 0.45;
+  cursor: default;
+}
+.cl-palette [cmdk-empty] {
+  padding: 22px 16px;
+  text-align: center;
+  font-size: var(--fs-base);
+  color: var(--text-muted);
+}
+.cl-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cl-item-sub {
+  flex: none;
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+.cl-badge {
+  --pill: var(--warning);
+}
+.cl-badge.working {
+  --pill: var(--success);
+}
+.cl-foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: none;
+  padding: 7px 16px;
+  font-size: var(--fs-2xs);
+  color: var(--text-faint);
+  border-top: 1px solid var(--border-subtle);
+}
+.cl-foot .cl-kbd {
+  margin-right: 3px;
+}
+
+/* Passo 2 do "Perguntar a…": prévia ao vivo do terminal + campo do prompt. */
+.cl-ask {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.cl-preview {
+  min-height: 120px;
+  max-height: 46vh;
+  margin: 0;
+  padding: 10px 16px;
+  overflow: auto;
+  white-space: pre;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--text-secondary);
+  background: var(--bg-editor);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.cl-preview.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: normal;
+  font-family: var(--font-sans);
+  color: var(--text-muted);
+}
+
+/* ========================= Ajuda de atalhos ========================= */
+.cl-help {
+  width: min(520px, calc(100vw - 32px));
+  max-height: 76vh;
+  padding: 0 20px 16px;
+  overflow: auto;
+  outline: none;
+}
+.cl-help h3 {
+  position: sticky;
+  top: 0;
+  margin: 0 -20px 6px;
+  padding: 16px 20px 12px;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-modal);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.cl-help-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 6px 0;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.cl-help-keys {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+.cl-help-note {
+  margin: 12px 0 0;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* ========================= Menus de contexto ========================= */
+.ux-menu,
+.ws-menu {
+  position: fixed;
+  min-width: 190px;
+  max-width: 300px;
+  max-height: calc(100vh - 16px);
+  padding: 4px;
+  overflow-y: auto;
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  outline: none;
+  transform-origin: top left;
+}
+.ux-menu {
+  z-index: 2000;
+}
+.ws-menu {
+  z-index: 100;
+}
+.ux-menu-item:disabled {
+  color: var(--text-faint);
+  cursor: default;
+}
+.ux-menu-item.danger,
+.ws-menu-danger {
+  color: var(--error);
+}
+.ws-menu-item svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+}
+.ws-menu-item:hover svg {
+  color: inherit;
+}
+.ux-menu-check {
+  display: inline-flex;
+  justify-content: center;
+  flex: none;
+  width: 14px;
+  color: var(--accent);
+}
+.ux-menu-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ux-menu-hint {
+  flex: none;
+  font-size: var(--fs-2xs);
+  color: var(--text-faint);
+}
+.ux-menu-arrow {
+  flex: none;
+  color: var(--text-faint);
+}
+.ux-menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border-subtle);
+}
+.ux-menu-empty {
+  padding: 6px 10px;
+  color: var(--text-muted);
+}
+
+/* Renomear (F2) */
+.ux-rename {
+  position: fixed;
+  z-index: 2000;
+}
+.ux-rename input {
+  min-width: 220px;
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-md);
+}
+
+/* ========================= Diálogo de confirmação ========================= */
+.ws-dialog-backdrop {
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.ws-dialog {
+  width: min(100%, 380px);
+  padding: 20px 20px 16px;
+}
+.ws-dialog h2 {
+  margin: 0 0 6px;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+.ws-dialog p {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+.ws-dialog p b {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.ws-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+.ws-dialog-actions button {
+  padding: 7px 16px;
+}
+
+/* ========================= Toasts (sonner) ========================= */
+.cl-toast {
+  --tone: var(--accent);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 340px;
+  padding: 10px 12px;
+  text-align: left;
+  color: var(--text-primary);
+  background: var(--bg-dropdown);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--tone);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  transition: background var(--t-fast);
+}
+.cl-toast:hover {
+  background: var(--bg-hover);
+}
+.cl-toast.tone-attention {
+  --tone: var(--warning);
+}
+.cl-toast.tone-done {
+  --tone: var(--success);
+}
+.cl-toast.tone-approval {
+  --tone: var(--error);
+}
+.cl-toast.tone-info {
+  --tone: var(--info);
+}
+.cl-toast-icon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--tone);
+}
+.cl-toast-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+.cl-toast-text b {
+  font-weight: 600;
+}
+.cl-toast-text span {
+  overflow-wrap: anywhere;
+  color: var(--text-secondary);
+}
+/* Toasts padrão do sonner (fora do nodeToast) com o mesmo vocabulário. */
+[data-sonner-toast].cl-sonner {
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* ========================= Banner do modo connect ========================= */
+.cl-connect-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  border-radius: 999px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.cl-connect-banner b {
+  color: var(--accent);
+}
+
+/* ========================= Dock (abas de terminal) ========================= */
+.ux-dock {
+  position: absolute;
+  left: 64px;
+  right: 230px;
+  bottom: 10px;
+  z-index: 32;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+.ux-dock > * {
+  pointer-events: auto;
+}
+.ux-dock-bar {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  max-width: 100%;
+  height: 32px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  background: color-mix(in srgb, var(--bg-dropdown) 92%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+.ux-dock-bar::-webkit-scrollbar {
+  display: none;
+}
+.ux-dock.is-dragging .ux-dock-bar {
+  min-width: 320px;
+  border-style: dashed;
+  border-color: var(--accent);
+}
+.ux-dock.is-hover .ux-dock-bar {
+  background: var(--accent-muted);
+}
+.ux-dock-drop {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-sm);
+  color: var(--accent);
+  background: var(--bg-dropdown);
+  border-radius: var(--radius-md);
+}
+.ux-dock.is-hover .ux-dock-drop {
+  color: var(--text-primary);
+  background: var(--accent-muted);
+}
+.ux-dock-empty {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+/* Aba (tab-item do markdown): sublinhado na cor do agente quando ativa. */
+.ux-dock-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  max-width: 200px;
+  padding: 0 6px 0 10px;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  border-right: 1px solid var(--border-subtle);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.ux-dock-tab:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+.ux-dock-tab.is-docked {
+  color: var(--text-secondary);
+}
+.ux-dock-tab.is-active {
+  color: var(--text-primary);
+  background: var(--bg-editor);
+}
+.ux-dock-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--agent, var(--accent));
+}
+.ux-dock-icon {
+  flex-shrink: 0;
+  color: var(--agent, var(--accent));
+}
+.ux-dock-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ux-dock-tab-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-xs);
+  opacity: 0;
+}
+.ux-dock-tab:hover .ux-dock-tab-btn,
+.ux-dock-tab.is-active .ux-dock-tab-btn,
+.ux-dock-tab-btn:focus-visible {
+  opacity: 1;
+}
+.ux-dock-collapse {
+  flex-shrink: 0;
+  width: 30px;
+  border-radius: 0;
+}
+.ux-dock-reopen {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--bg-dropdown) 92%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.ux-dock-reopen:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.ux-dock-panel {
+  --agent: var(--accent);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1100px;
+  min-height: 160px;
+  overflow: hidden;
+  background: var(--bg-editor);
+  border: 1px solid color-mix(in srgb, var(--agent) 55%, var(--border));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+.ux-dock-resize {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 6px;
+  cursor: ns-resize;
+}
+.ux-dock-resize:hover {
+  background: color-mix(in srgb, var(--agent) 35%, transparent);
+}
+.ux-dock-panel-header {
+  cursor: default;
+}
+.ux-dock-panel-header:active {
+  cursor: default;
+}
+.ux-dock-panel .term-body-wrap {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ========================= Composer (@menções) ========================= */
+.ux-composer {
+  position: absolute;
+  left: 50%;
+  bottom: 60px;
+  z-index: 34;
+  display: flex;
+  flex-direction: column;
+  width: min(640px, calc(100% - 32px));
+  font-size: var(--fs-sm);
+  transform: translateX(-50%);
+  animation: composerIn 0.2s var(--ease-out);
+}
+.ux-composer:focus-within {
+  border-color: color-mix(in srgb, var(--border-focus) 60%, var(--border));
+}
+@keyframes composerIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+.ux-composer-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px 6px 14px;
+}
+.ux-composer-hint {
+  display: inline-flex;
+  align-items: center;
+  flex: 1;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.ux-composer-body {
+  position: relative;
+  padding: 0 10px;
+}
+.ux-composer-input {
+  display: block;
+  width: 100%;
+  min-height: 72px;
+  max-height: 40vh;
+  padding: 8px 10px;
+  resize: vertical;
+  font-size: var(--fs-base);
+  line-height: 1.5;
+}
+.ux-composer-menu {
+  position: absolute;
+  left: 10px;
+  bottom: calc(100% + 4px);
+  z-index: 2;
+  min-width: 220px;
+  max-height: 220px;
+  padding: 4px;
+  overflow-y: auto;
+  transform-origin: bottom left;
+}
+.ux-composer-option {
+  gap: 6px;
+  padding: 5px 8px;
+}
+.ux-composer-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 10px 14px;
+}
+.ux-composer-to {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--text-secondary);
+}
+.ux-chip {
+  --pill: var(--accent);
+}
+.ux-chip-note {
+  --pill: var(--warning);
+}
+.ux-muted {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}

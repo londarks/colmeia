@@ -1,0 +1,671 @@
+/* ==========================================================================
+   Casca do app: janela sem moldura (TitleBar), sidebar de workspaces,
+   canvas (React Flow tematizado), toolbar flutuante e StatusBar.
+   Camadas de fundo como no markdown: sidebar (mais escura) → canvas → nós.
+   ========================================================================== */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--bg-note-list);
+}
+.workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+/* ============================ Barra de título ============================ */
+.titlebar {
+  display: flex;
+  align-items: stretch;
+  flex: none;
+  height: 32px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-subtle);
+  user-select: none;
+  z-index: 30;
+}
+.titlebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+}
+.titlebar-logo {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+.titlebar-name {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-secondary);
+}
+.titlebar-drag {
+  flex: 1;
+}
+.window-controls {
+  display: flex;
+  align-items: stretch;
+  flex: none;
+}
+.win-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.win-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.win-btn.win-close:hover {
+  background: var(--window-close);
+  color: var(--window-close-text);
+}
+.win-btn:focus-visible {
+  outline-offset: -2px;
+  border-radius: 0;
+}
+
+/* ============================ Sidebar ============================ */
+.sidebar {
+  width: 232px;
+  min-width: 232px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 6px 8px 8px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  overflow: hidden;
+  user-select: none;
+  z-index: 10;
+}
+.side-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 24px;
+  flex: none;
+}
+.side-collapse {
+  width: 24px;
+  height: 24px;
+}
+
+/* Botão de reabrir a sidebar (no canto do canvas). */
+.sidebar-reopen {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--bg-dropdown) 90%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.sidebar-reopen:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ==================== Árvore de workspaces ==================== */
+.ws-tree {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+.ws-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: none;
+}
+
+/* "Novo workspace" / "Nova pasta": linhas como "All Notes" do markdown. */
+.ws-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  font-size: var(--fs-base);
+  text-align: left;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.ws-add:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.ws-add svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: var(--accent);
+}
+
+/* Campo de filtro (Filter… da lista de notas do markdown). */
+.ws-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  height: 28px;
+  margin-top: 6px;
+  padding: 0 8px;
+  color: var(--text-muted);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color var(--t-fast);
+}
+.ws-search:focus-within {
+  border-color: var(--border-focus);
+}
+.ws-search svg {
+  flex: none;
+  width: 13px;
+  height: 13px;
+}
+.ws-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+.ws-search-clear {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-sm);
+}
+
+.ws-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 -4px;
+  padding: 2px 4px 8px;
+}
+
+.ws-folder {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.ws-folder-head,
+.ws-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 4px 8px;
+  font-size: var(--fs-base);
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.ws-folder-head:hover,
+.ws-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.ws-folder-head {
+  gap: 5px;
+  padding-left: 4px;
+}
+.ws-folder-head > svg:not(.ws-chevron) {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: var(--sidebar-icon-notebook);
+}
+.ws-chevron {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  color: var(--text-muted);
+}
+.ws-folder-head.is-dragover,
+.ws-root.is-dragover {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+}
+.ws-folder-head.is-selected,
+.ws-item.is-selected {
+  background: var(--accent-muted);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.ws-item.is-current {
+  background: var(--bg-selected);
+  color: var(--text-primary);
+}
+.ws-item.is-current.is-selected {
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg-selected));
+}
+.ws-folder-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 16px;
+}
+.ws-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+}
+
+/* Bolinha de cor do workspace (bolinhas de STATUS do markdown). */
+.ws-color {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  transition: box-shadow var(--t-fast), transform var(--t-fast);
+}
+.ws-color:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 2px var(--bg-sidebar), 0 0 0 3px var(--text-muted);
+}
+.ws-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ws-edit {
+  flex: 1;
+  padding: 1px 6px;
+  font-size: var(--fs-base);
+  border-color: var(--border-focus);
+  border-radius: var(--radius-sm);
+}
+.ws-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 8px 8px 26px;
+}
+.ws-swatch {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.ws-swatch:hover {
+  transform: scale(1.18);
+}
+.ws-swatch.is-active {
+  box-shadow: 0 0 0 2px var(--bg-sidebar), 0 0 0 3px var(--text-primary);
+}
+
+/* ============================== Canvas ============================== */
+.canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* React Flow tematizado pelos próprios tokens --xy-* (sem !important). */
+.react-flow {
+  --xy-background-color: var(--bg-note-list);
+  --xy-edge-stroke: var(--accent);
+  --xy-edge-stroke-width: 2;
+  --xy-edge-stroke-selected: var(--accent-hover);
+  --xy-connectionline-stroke: var(--accent);
+  --xy-connectionline-stroke-width: 2;
+  --xy-attribution-background-color: transparent;
+  --xy-minimap-background-color: var(--bg-sidebar);
+  --xy-minimap-mask-background-color: var(--minimap-mask);
+  --xy-minimap-mask-stroke-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  --xy-minimap-mask-stroke-width: 1;
+  --xy-minimap-node-background-color: var(--text-faint);
+  --xy-minimap-node-stroke-color: transparent;
+  --xy-controls-button-background-color: var(--bg-dropdown);
+  --xy-controls-button-background-color-hover: var(--bg-hover);
+  --xy-controls-button-color: var(--text-secondary);
+  --xy-controls-button-color-hover: var(--text-primary);
+  --xy-controls-button-border-color: var(--border-subtle);
+  --xy-controls-box-shadow: var(--shadow-md);
+  --xy-selection-background-color: color-mix(in srgb, var(--accent) 8%, transparent);
+  --xy-selection-border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  --xy-resize-background-color: var(--accent);
+  --xy-handle-background-color: var(--bg-editor);
+  --xy-handle-border-color: var(--accent);
+  background: var(--bg-note-list);
+}
+.react-flow__attribution {
+  display: none;
+}
+
+.react-flow__controls {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.react-flow__controls-button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+}
+.react-flow__controls-button svg {
+  max-width: 11px;
+  max-height: 11px;
+}
+
+.react-flow__minimap {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+/* Estado vazio */
+.empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 420px;
+  text-align: center;
+  font-size: var(--fs-base);
+  line-height: 1.55;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.empty-logo {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px;
+  object-fit: contain;
+  opacity: 0.85;
+}
+.empty h2 {
+  margin: 0 0 6px;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.empty p {
+  margin: 0;
+}
+.empty b {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ============================ Toolbar flutuante ============================ */
+.toolbar-wrap {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 24px);
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 4px;
+  border-radius: var(--radius-lg);
+}
+.toolbar-subrow {
+  animation: toolbarSubrowIn 0.12s ease;
+}
+@keyframes toolbarSubrowIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.tool-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.tool-item svg {
+  width: 16px;
+  height: 16px;
+}
+.tool-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.tool-item.on {
+  background: var(--accent-muted);
+  color: var(--accent);
+}
+.tool-item.danger:hover {
+  background: color-mix(in srgb, var(--error) 12%, transparent);
+  color: var(--error);
+}
+.tool-divider {
+  flex: none;
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--border);
+}
+.tool-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+}
+.tool-swatch,
+.tnb-swatch {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.tool-swatch:hover,
+.tnb-swatch:hover {
+  transform: scale(1.15);
+}
+.tool-swatch.on,
+.tnb-swatch.on {
+  box-shadow: 0 0 0 2px var(--bg-dropdown), 0 0 0 3px var(--text-primary);
+}
+.tool-menu {
+  position: relative;
+  display: inline-flex;
+}
+.tool-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.tool-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 176px;
+  padding: 4px;
+  transform-origin: top left;
+}
+.dropdown-item svg {
+  flex: none;
+}
+.dropdown-item.on {
+  color: var(--accent);
+}
+
+/* ============================ StatusBar ============================ */
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: none;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 10px;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  background: var(--bg-sidebar);
+  border-top: 1px solid var(--border-subtle);
+  user-select: none;
+  z-index: 30;
+}
+.statusbar-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.statusbar-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  white-space: nowrap;
+}
+.statusbar-item svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+}
+.statusbar-item b {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.statusbar-canvas {
+  max-width: 220px;
+  color: var(--text-secondary);
+}
+.statusbar-canvas span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.statusbar-sep {
+  flex: none;
+  color: var(--border);
+}
+.statusbar-item.is-success {
+  color: var(--success);
+}
+.statusbar-item.is-warning {
+  color: var(--warning);
+}
+.statusbar-item.is-error {
+  color: var(--error);
+}
+.statusbar-item.is-success b,
+.statusbar-item.is-warning b,
+.statusbar-item.is-error b {
+  color: inherit;
+}
+.statusbar-theme {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+  transition: color var(--t-fast);
+}
+.statusbar-theme:hover,
+.statusbar-theme:focus-within {
+  color: var(--text-secondary);
+}
+.statusbar-theme svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+}
+.statusbar-theme select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0 2px;
+  font-size: var(--fs-xs);
+  color: inherit;
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+}
+.statusbar-swatch {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-muted);
+}

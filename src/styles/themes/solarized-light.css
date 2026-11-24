@@ -1,0 +1,113 @@
+/* Portado do app "markdown" (apps/desktop/src/styles/themes/solarized-light.css). */
+/* Solarized Light — warm cream tones, Inkdrop-inspired */
+@layer builtin-theme {
+  [data-theme="solarized-light"] {
+    --bg-sidebar: #eee8d5;
+    --bg-note-list: #f5efdc;
+    --bg-editor: #fdf6e3;
+    --bg-hover: #e6dfcc;
+    --bg-selected: rgba(38, 139, 210, 0.22);
+    --bg-input: #eee8d5;
+    --bg-dropdown: #fdf6e3;
+    --bg-tooltip: #073642;
+    --bg-modal: #fdf6e3;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.25);
+
+    --text-primary: #073642;
+    --text-secondary: #586e75;
+    --text-muted: #93a1a1;
+    --text-faint: #c0c8c8;
+    --text-inverse: #fdf6e3;
+
+    --accent: #268bd2;
+    --accent-hover: #1a7bc2;
+    --accent-muted: rgba(38, 139, 210, 0.12);
+    --accent-blue: #268bd2;
+    --accent-blue-hover: #1a7bc2;
+
+    --border: #d6cdb5;
+    --border-subtle: #e6dfcc;
+    --border-focus: #268bd2;
+
+    --scrollbar: #c8bfa5;
+    --scrollbar-hover: #b0a78d;
+
+    --selection: rgba(38, 139, 210, 0.22);
+    --selection-text: inherit;
+
+    --success: #859900;
+    --warning: #b58900;
+    --error: #dc322f;
+    --info: #268bd2;
+
+    --heading-1: #268bd2;
+    --heading-2: #4c646c;
+    --heading-3: #2aa198;
+    --heading-4: #d33682;
+    --code-bg: #e8e1cb;
+    --code-text: #586e75;
+    --link: #2aa198;
+    --link-hover: #268bd2;
+
+    /* Syntax — soft, warm tones for light background */
+    --syntax-keyword: #e07850;
+    --syntax-string: #5cb8b0;
+    --syntax-number: #e080a0;
+    --syntax-comment: #b0b8b8;
+    --syntax-function: #50a0d8;
+    --syntax-type: #d0a030;
+    --syntax-property: #50a0d8;
+    --syntax-operator: #8898a0;
+    --syntax-variable: #60a8d8;
+
+    --editor-line-active: rgba(191, 159, 64, 0.08);
+    --editor-cursor: #268bd2;
+    --editor-matching-bracket: rgba(38, 139, 210, 0.25);
+
+    --sidebar-icon-notebook: #268bd2;
+    --sidebar-icon-tag: #6c71c4;
+    --sidebar-icon-status: #2aa198;
+    --sidebar-icon-trash: #dc322f;
+
+    --note-card-border: #e6dfcc;
+    --note-card-hover: #eee8d5;
+    --note-card-selected: rgba(38, 139, 210, 0.22);
+    --note-excerpt: #93a1a1;
+    --note-date: #b0a78d;
+  }
+}
+
+/* colmeia — extensões do tema: terminal (ANSI), arestas, sombras e esquema de cor */
+@layer builtin-theme {
+  [data-theme="solarized-light"] {
+    color-scheme: light;
+
+    /* Conexão "acesa" durante uma interação (contrasta com o --accent) */
+    --edge-active: #d33682;
+
+    /* Sombras e máscara do MiniMap mais leves no claro */
+    --shadow-sm: 0 1px 2px rgba(30, 30, 60, 0.08);
+    --shadow-md: 0 4px 16px -4px rgba(30, 30, 60, 0.14), 0 2px 6px -2px rgba(30, 30, 60, 0.08);
+    --shadow-lg: 0 16px 48px -12px rgba(30, 30, 60, 0.22), 0 4px 14px -4px rgba(30, 30, 60, 0.1);
+    --shadow-node: 0 6px 22px -8px rgba(30, 30, 60, 0.18), 0 1px 3px rgba(30, 30, 60, 0.08);
+    --minimap-mask: rgba(120, 120, 150, 0.16);
+
+    /* Paleta ANSI do terminal (xterm) */
+    --ansi-black: #073642;
+    --ansi-red: #dc322f;
+    --ansi-green: #859900;
+    --ansi-yellow: #b58900;
+    --ansi-blue: #268bd2;
+    --ansi-magenta: #d33682;
+    --ansi-cyan: #2aa198;
+    --ansi-white: #586e75;
+    --ansi-bright-black: #93a1a1;
+    --ansi-bright-red: #cb4b16;
+    --ansi-bright-green: #859900;
+    --ansi-bright-yellow: #b58900;
+    --ansi-bright-blue: #268bd2;
+    --ansi-bright-magenta: #6c71c4;
+    --ansi-bright-cyan: #2aa198;
+    --ansi-bright-white: #002b36;
+  }
+}

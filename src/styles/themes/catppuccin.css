@@ -1,0 +1,96 @@
+/* Portado do app "markdown" (apps/desktop/src/styles/themes/catppuccin.css). */
+/* Catppuccin Mocha — Soothing pastel theme (ported from FrankMD) */
+@layer builtin-theme {
+  [data-theme="catppuccin"] {
+    --bg-sidebar: #181825;
+    --bg-note-list: #1e1e2e;
+    --bg-editor: #24243a;
+    --bg-hover: #45475a;
+    --bg-selected: #585b70;
+    --bg-input: #313244;
+    --bg-dropdown: #313244;
+    --bg-tooltip: #181825;
+    --bg-modal: #1e1e2e;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.6);
+    --text-primary: #cdd6f4;
+    --text-secondary: #bac2de;
+    --text-muted: #585b70;
+    --text-faint: #45475a;
+    --text-inverse: #1e1e2e;
+    --accent: #89b4fa;
+    --accent-hover: #b4befe;
+    --accent-muted: rgba(137, 180, 250, 0.15);
+    --accent-blue: #89dceb;
+    --accent-blue-hover: #94e2d5;
+    --border: #45475a;
+    --border-subtle: #313244;
+    --border-focus: #89b4fa;
+    --scrollbar: #45475a;
+    --scrollbar-hover: #585b70;
+    --selection: rgba(137, 180, 250, 0.3);
+    --selection-text: inherit;
+    --success: #a6e3a1;
+    --warning: #f9e2af;
+    --error: #f38ba8;
+    --info: #89b4fa;
+    --heading-1: #cba6f7;
+    --heading-2: #89b4fa;
+    --heading-3: #94e2d5;
+    --heading-4: #f5c2e7;
+    --code-bg: #313244;
+    --code-text: #cdd6f4;
+    --link: #89b4fa;
+    --link-hover: #b4befe;
+    /* Syntax highlighting */
+    --syntax-keyword: #cba6f7;
+    --syntax-string: #a6e3a1;
+    --syntax-number: #fab387;
+    --syntax-comment: #6c7086;
+    --syntax-function: #89b4fa;
+    --syntax-type: #f9e2af;
+    --syntax-property: #89dceb;
+    --syntax-operator: #94e2d5;
+    --syntax-variable: #cdd6f4;
+
+    --editor-line-active: rgba(137, 180, 250, 0.06);
+    --editor-cursor: #f5e0dc;
+    --editor-matching-bracket: rgba(137, 180, 250, 0.3);
+    --sidebar-icon-notebook: #89b4fa;
+    --sidebar-icon-tag: #94e2d5;
+    --sidebar-icon-status: #a6e3a1;
+    --sidebar-icon-trash: #f38ba8;
+    --note-card-border: #45475a;
+    --note-card-hover: #313244;
+    --note-card-selected: #45475a;
+    --note-excerpt: #585b70;
+    --note-date: #45475a;
+  }
+}
+
+/* colmeia — extensões do tema: terminal (ANSI), arestas, sombras e esquema de cor */
+@layer builtin-theme {
+  [data-theme="catppuccin"] {
+    color-scheme: dark;
+
+    /* Conexão "acesa" durante uma interação (contrasta com o --accent) */
+    --edge-active: #a6e3a1;
+
+    /* Paleta ANSI do terminal (xterm) */
+    --ansi-black: #45475a;
+    --ansi-red: #f38ba8;
+    --ansi-green: #a6e3a1;
+    --ansi-yellow: #f9e2af;
+    --ansi-blue: #89b4fa;
+    --ansi-magenta: #f5c2e7;
+    --ansi-cyan: #94e2d5;
+    --ansi-white: #bac2de;
+    --ansi-bright-black: #585b70;
+    --ansi-bright-red: #f38ba8;
+    --ansi-bright-green: #a6e3a1;
+    --ansi-bright-yellow: #f9e2af;
+    --ansi-bright-blue: #89b4fa;
+    --ansi-bright-magenta: #f5c2e7;
+    --ansi-bright-cyan: #94e2d5;
+    --ansi-bright-white: #a6adc8;
+  }
+}

@@ -1,57 +1,122 @@
 // Papéis (roles) que um agente pode assumir no canvas — o "Role Assignment".
-// Cada papel tem uma cor (para o badge) e um briefing (instruções enviadas
-// ao agente quando o papel é atribuído).
+//
+// O texto completo de cada papel (o prompt que o agente recebe) vive no backend
+// (`src-tauri/src/roles.rs`), persistido em `app_data_dir/roles.json` junto com
+// os papéis criados pelo usuário/agentes. O papel entra UMA vez, no boot do
+// agente — não é mais reinjetado a cada `ask`.
+//
+// `ROLES`/`ROLE_MAP` continuam exportando os built-ins (id, rótulo, cor e um
+// resumo curto) para quem precisa síncrono; `loadRoles()` traz a lista completa.
+
+import { useSyncExternalStore } from "react";
+import { listen } from "@tauri-apps/api/event";
+import { rolesList } from "./pty";
 
 export interface Role {
   id: string;
   label: string;
   color: string;
+  /** Resumo curto do papel (para tooltips). O prompt completo está em `prompt`. */
   briefing: string;
+  /** Prompt completo (só nos papéis vindos de `loadRoles()`). */
+  prompt?: string;
+  builtin?: boolean;
 }
-
-// Toda mensagem enviada a um agente já vem prefixada com o briefing do seu papel.
-// Cada briefing estabelece IDENTIDADE + como agir + como usar a CLI `colmeia`.
-const TEAM =
-  "Você faz parte de uma COLMEIA — equipe de agentes em canvas coordenada por um Orquestrador. Colabore com os agentes conectados a você usando os comandos de shell do `colmeia` (`context` para ler suas instruções, `list`, `check`, `ask`).";
 
 export const ROLES: Role[] = [
   {
     id: "orquestrador",
     label: "Orquestrador",
     color: "#f59e0b",
-    briefing:
-      `Você é o ORQUESTRADOR desta colmeia. Seu trabalho é COORDENAR, não executar código você mesmo. ${TEAM} Fluxo: (1) leia o objetivo com \`colmeia context\`; (2) rode \`colmeia list\` para ver sua equipe — SE ESTIVER VAZIA, monte-a com \`colmeia recruit \"<nome>\" \"<papel>\"\` (o 1º arg é o NOME do nó, o 2º é o PAPEL válido: engenheiro, revisor, arquiteto, testador; ex.: \`colmeia recruit \"Eng-Core\" engenheiro\`, \`colmeia recruit \"Revisor\" revisor\`), aguarde alguns segundos e rode \`colmeia list\` de novo; endereçe cada agente pelo NOME que você deu (ex.: \`colmeia ask \"Eng-Core\" ...\`); (3) quebre o objetivo em tarefas e delegue com \`colmeia ask \"<agente>\" \"<tarefa específica>\"\`; (4) depois de delegar, AGUARDE o agente terminar com \`colmeia wait \"<agente>\"\` (bloqueia até ele ficar em silêncio) e SÓ ENTÃO leia o resultado com \`colmeia check \"<agente>\"\` — NÃO fique sondando em loop, dormindo com timers, nem lendo arquivos pra adivinhar se terminou; use \`wait\`; (5) itere e entregue ao usuário um resumo final. NÃO use seus próprios subagentes internos — use os agentes da colmeia via \`colmeia recruit\`/\`ask\`. Seja decisivo e não peça confirmação para delegar.`,
+    briefing: "Coordena a equipe: recruta, delega com ask-back, junta e verifica os resultados.",
   },
   {
     id: "architect",
     label: "Arquiteto",
     color: "#10b981",
-    briefing:
-      `Você é o ARQUITETO. ${TEAM} Antes de qualquer implementação, defina a estrutura, os módulos, as interfaces e as decisões-chave de design, sempre priorizando simplicidade. Entregue um plano curto e acionável e registre-o no canvas com \`colmeia note \"Plano\" \"<conteúdo>\"\`. Não escreva o código final — isso é do Engenheiro. Trabalhe de forma autônoma.`,
+    briefing: "Define a forma da solução e registra um plano curto antes da implementação.",
   },
   {
     id: "engineer",
     label: "Engenheiro",
     color: "#5ec8ff",
-    briefing:
-      `Você é o ENGENHEIRO. ${TEAM} Implemente exatamente a tarefa recebida com código limpo, coeso com o projeto e testável. Trabalhe de forma AUTÔNOMA e completa, sem pedir confirmações desnecessárias — decida e execute. Ao terminar, escreva um resumo objetivo do que mudou e avise que está pronto para revisão.`,
+    briefing: "Implementa a tarefa de ponta a ponta e prova que funciona.",
   },
   {
     id: "reviewer",
     label: "Revisor",
     color: "#a855f7",
-    briefing:
-      `Você é o REVISOR. ${TEAM} Avalie criticamente o trabalho entregue: bugs, segurança, casos de borda, clareza e simplicidade. Use \`colmeia check\` para ler o que os outros produziram. Aponte problemas concretos com localização e correção sugerida; se estiver bom, aprove explicitamente. Seja direto e autônomo.`,
+    briefing: "Revisa criticamente: bugs, bordas, segurança — com localização e correção.",
   },
   {
     id: "tester",
     label: "Testador",
     color: "#eab308",
-    briefing:
-      `Você é o TESTADOR/QA. ${TEAM} Escreva e execute testes, reproduza os cenários de uso e valide o comportamento de ponta a ponta. Relate falhas com passos de reprodução claros. Aja de forma autônoma, sem pedir confirmações.`,
+    briefing: "Prova com execução real se o comportamento está correto.",
   },
 ];
 
 export const ROLE_MAP: Record<string, Role> = Object.fromEntries(
   ROLES.map((r) => [r.id, r]),
 );
+
+const FALLBACK_COLOR = "#94a3b8";
+
+/** Lista completa de papéis (built-ins + do usuário). Cai nos built-ins se o
+ *  backend não responder. */
+export async function loadRoles(): Promise<Role[]> {
+  try {
+    const list = await rolesList();
+    return list.map((r) => ({
+      id: r.id,
+      label: r.label,
+      color: r.color || ROLE_MAP[r.id]?.color || FALLBACK_COLOR,
+      briefing: ROLE_MAP[r.id]?.briefing ?? r.prompt.split("\n")[0].slice(0, 140),
+      prompt: r.prompt,
+      builtin: r.builtin,
+    }));
+  } catch {
+    return ROLES;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Store reativo de papéis: carrega do backend e recarrega em `colmeia://roles-changed`
+// (quando um agente roda `colmeia role create|edit|write`).
+
+
+let rolesCache: Role[] = ROLES;
+let rolesMap: Record<string, Role> = ROLE_MAP;
+let started = false;
+const listeners = new Set<() => void>();
+
+function refreshRoles() {
+  loadRoles().then((list) => {
+    rolesCache = list;
+    rolesMap = Object.fromEntries(list.map((r) => [r.id, r]));
+    listeners.forEach((l) => l());
+  });
+}
+
+function ensureRolesStarted() {
+  if (started) return;
+  started = true;
+  refreshRoles();
+  listen("colmeia://roles-changed", () => refreshRoles()).catch(() => {});
+}
+
+function subscribeRoles(fn: () => void) {
+  ensureRolesStarted();
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+/** Lista atual de papéis (built-ins + do usuário), reativa. */
+export function useRoles(): Role[] {
+  return useSyncExternalStore(subscribeRoles, () => rolesCache);
+}
+
+/** Papel pelo id (inclui papéis do usuário já carregados). */
+export function roleById(id: string | undefined): Role | undefined {
+  return id ? rolesMap[id] : undefined;
+}
