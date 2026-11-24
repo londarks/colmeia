@@ -27,5 +27,12 @@ dist-ssr
 .claude/settings.local.json
 
 # Floors (git worktrees criados pelo colmeia)
+# Formato atual: <pai>/.colmeia-floors/<repo>--<slug> (fora do repo; a linha
+# abaixo só protege se alguém apontar o colmeia para uma subpasta).
+.colmeia-floors/
+# Formato antigo (<repo>-floor-<nome>), adotado automaticamente pelo floor_list.
 *-floor-*
 .git-floor-*
+
+# Worktrees de agentes (Claude Code)
+.claude/worktrees/

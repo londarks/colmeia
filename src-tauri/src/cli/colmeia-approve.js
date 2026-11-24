@@ -3,21 +3,15 @@
 // Recebe a solicitação de uso de ferramenta no stdin, e — para ferramentas
 // sensíveis — PAUSA o agente e pede aprovação ao painel central do colmeia.
 // A resposta do servidor loopback é o próprio JSON de decisão do hook.
+// A identidade vem do token deste terminal (header X-Colmeia-Token).
 
 const http = require("http");
 
 const PORT = process.env.COLMEIA_PORT || "0";
 const TOKEN = process.env.COLMEIA_TOKEN || "";
-const NODE_ID = process.env.COLMEIA_NODE_ID || "";
 
 // Ferramentas que exigem aprovação humana (rodar comando / alterar arquivos).
-const SENSITIVE = new Set([
-  "Bash",
-  "Write",
-  "Edit",
-  "MultiEdit",
-  "NotebookEdit",
-]);
+const SENSITIVE = new Set(["Bash", "Write", "Edit", "MultiEdit", "NotebookEdit"]);
 
 const ALLOW = { hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "allow" } };
 const ASK = { hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "ask" } };
@@ -52,26 +46,26 @@ process.stdin.on("end", () => {
   if (!SENSITIVE.has(tool)) emit(ALLOW);
 
   const payload = JSON.stringify({ tool, summary: String(summary) });
-  const path =
-    `/approve?source=${encodeURIComponent(NODE_ID)}&token=${encodeURIComponent(TOKEN)}`;
-
   const req = http.request(
     {
       hostname: "127.0.0.1",
       port: Number(PORT),
-      path,
+      path: "/approve",
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Content-Length": Buffer.byteLength(payload),
+        "X-Colmeia-Token": TOKEN,
       },
     },
     (res) => {
       let body = "";
       res.on("data", (c) => (body += c));
       res.on("end", () => {
-        // O servidor devolve o JSON de decisão do hook pronto.
-        process.stdout.write(body || JSON.stringify(ASK));
+        // O servidor devolve o JSON de decisão pronto; qualquer outra coisa
+        // (ex.: 403 de token inválido) cai no fluxo normal do terminal.
+        if (res.statusCode === 200 && body) process.stdout.write(body);
+        else process.stdout.write(JSON.stringify(ASK));
         process.exit(0);
       });
     },
